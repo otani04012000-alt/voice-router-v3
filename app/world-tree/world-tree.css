@@ -651,3 +651,56 @@
     transition: none;
   }
 }
+
+/* ── SYNAPSE VIEW: 3D風の奥行き表現 ── */
+.wt-synapse-bg-particles {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.wt-synapse-links {
+  z-index: 1;
+}
+
+.wt-synapse-node {
+  will-change: transform, filter, opacity;
+}
+
+.wt-synapse-node-ring {
+  position: absolute;
+  inset: -6px;
+  border: 1px solid var(--node-color, var(--wt-gold-dim));
+  border-radius: 999px;
+  opacity: 0.35;
+  animation: wt-synapse-pulse 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes wt-synapse-pulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.25);
+    opacity: 0.05;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wt-synapse-node-ring {
+    animation: none;
+  }
+  .wt-synapse-bg-particles animate,
+  .wt-synapse-links animateMotion {
+    display: none;
+  }
+}
