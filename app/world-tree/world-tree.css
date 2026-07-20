@@ -704,3 +704,23 @@
     display: none;
   }
 }
+
+/* ── SYNAPSE VIEW: ヘッダーと表示切替 ── */
+.wt-synapse-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.wt-synapse-viewtoggle {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.wt-synapse-viewtoggle .wt-btn.is-active {
+  border-color: var(--wt-gold-dim);
+  color: var(--wt-gold-dim);
+  background-color: rgba(200, 169, 110, 0.08);
+}
