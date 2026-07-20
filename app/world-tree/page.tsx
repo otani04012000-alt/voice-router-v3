@@ -32,6 +32,7 @@ interface SynapseNode {
   y: number
   vx: number
   vy: number
+  depth: number
   strength: number
   color: string
 }
@@ -41,6 +42,19 @@ interface SynapseLink {
   b: string
   weight: number
 }
+
+// ─── SYNAPSE VIEW: 背景の浮遊パーティクル（固定シード、奥行きの空気感）───
+const BG_PARTICLES = Array.from({ length: 26 }, (_, i) => {
+  const seed = i * 37.1
+  return {
+    cx: (seed * 13) % 100,
+    cy: (seed * 7) % 100,
+    r: 0.25 + ((seed * 3) % 10) / 20,
+    baseOpacity: 0.08 + ((seed * 5) % 10) / 40,
+    dur: 4 + ((seed * 11) % 10),
+    drift: 3 + ((seed * 17) % 10),
+  }
+})
 
 // ─── SYNAPSE VIEW: 単語抽出（簡易版・形態素解析なし）───
 const STOP_TOKENS = new Set([
@@ -280,6 +294,7 @@ function SynapseView() {
         y: 50 + Math.random() * 40 - 20,
         vx: (Math.random() - 0.5) * 0.06,
         vy: (Math.random() - 0.5) * 0.06,
+        depth: 0.3 + Math.random() * 0.7,
         strength: 0.5,
         color: colorForWords(words),
       })
@@ -399,6 +414,26 @@ function SynapseView() {
       </div>
 
       <div className="wt-synapse-space" ref={containerRef}>
+        {/* 背景の浮遊パーティクル：常時表示、奥行きの空気感を出す */}
+        <svg className="wt-synapse-bg-particles" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          {BG_PARTICLES.map((p, i) => (
+            <circle key={i} cx={p.cx} cy={p.cy} r={p.r} fill="#c8a96e" opacity={p.baseOpacity}>
+              <animate
+                attributeName="opacity"
+                values={`${p.baseOpacity * 0.2};${p.baseOpacity};${p.baseOpacity * 0.2}`}
+                dur={`${p.dur}s`}
+                repeatCount="indefinite"
+              />
+              <animate
+                attributeName="cy"
+                values={`${p.cy};${p.cy - p.drift};${p.cy}`}
+                dur={`${p.dur * 1.4}s`}
+                repeatCount="indefinite"
+              />
+            </circle>
+          ))}
+        </svg>
+
         {nodes.length === 0 ? (
           <p className="wt-synapse-empty">
             まだノードがない。ファイルを入れると、単語が浮かび上がる。
@@ -412,45 +447,67 @@ function SynapseView() {
                 if (!a || !b) return null
                 const opacity = Math.min(0.85, 0.15 + link.weight * 0.18)
                 const width = Math.min(1.2, 0.15 + link.weight * 0.18)
+                const pulseDur = Math.max(1.6, 3.2 - link.weight * 0.4)
                 return (
-                  <line
-                    key={i}
-                    x1={a.x}
-                    y1={a.y}
-                    x2={b.x}
-                    y2={b.y}
-                    stroke="#c8a96e"
-                    strokeOpacity={opacity}
-                    strokeWidth={width}
-                  />
+                  <g key={i}>
+                    <line
+                      x1={a.x}
+                      y1={a.y}
+                      x2={b.x}
+                      y2={b.y}
+                      stroke="#c8a96e"
+                      strokeOpacity={opacity}
+                      strokeWidth={width}
+                    />
+                    {/* 線の上を流れるエネルギー粒子 */}
+                    <circle r={0.55} fill="#e8d3a0">
+                      <animateMotion
+                        dur={`${pulseDur}s`}
+                        repeatCount="indefinite"
+                        path={`M${a.x},${a.y} L${b.x},${b.y}`}
+                      />
+                      <animate
+                        attributeName="opacity"
+                        values="0;0.9;0"
+                        dur={`${pulseDur}s`}
+                        repeatCount="indefinite"
+                      />
+                    </circle>
+                  </g>
                 )
               })}
             </svg>
 
-            {nodes.map((n) => (
-              <div
-                key={n.id}
-                className="wt-synapse-node"
-                style={
-                  {
-                    left: `${n.x}%`,
-                    top: `${n.y}%`,
-                    '--node-color': n.color,
-                    '--node-strength': n.strength,
-                    transform: `translate(-50%, -50%) scale(${0.75 + n.strength * 0.5})`,
-                    opacity: 0.35 + n.strength * 0.65,
-                  } as CSSProperties
-                }
-                title={n.fileName}
-              >
-                <span className="wt-synapse-node-label">{n.fileName}</span>
-                <div className="wt-synapse-node-words">
-                  {n.words.slice(0, 4).map((w, wi) => (
-                    <span key={wi}>{w}</span>
-                  ))}
+            {nodes
+              .slice()
+              .sort((x, y) => x.depth - y.depth)
+              .map((n) => (
+                <div
+                  key={n.id}
+                  className="wt-synapse-node"
+                  style={
+                    {
+                      left: `${n.x}%`,
+                      top: `${n.y}%`,
+                      '--node-color': n.color,
+                      '--node-strength': n.strength,
+                      zIndex: Math.round(n.depth * 100),
+                      filter: `blur(${(1 - n.depth) * 1.4}px)`,
+                      transform: `translate(-50%, -50%) scale(${(0.55 + n.depth * 0.55) * (0.75 + n.strength * 0.5)})`,
+                      opacity: (0.35 + n.strength * 0.65) * (0.5 + n.depth * 0.5),
+                    } as CSSProperties
+                  }
+                  title={n.fileName}
+                >
+                  <span className="wt-synapse-node-ring" />
+                  <span className="wt-synapse-node-label">{n.fileName}</span>
+                  <div className="wt-synapse-node-words">
+                    {n.words.slice(0, 4).map((w, wi) => (
+                      <span key={wi}>{w}</span>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </>
         )}
       </div>
