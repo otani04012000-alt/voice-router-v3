@@ -1,7 +1,12 @@
 'use client'
 
-import { useState, useCallback, KeyboardEvent } from 'react'
+import { useState, useCallback, useEffect, useMemo, useRef, KeyboardEvent } from 'react'
+import type { CSSProperties } from 'react'
 import './world-tree.css'
+
+function cn(...values: Array<string | false | null | undefined>) {
+  return values.filter(Boolean).join(' ')
+}
 
 // ── 型定義 ──────────────────────────────────────────
 interface TreeNode {
@@ -17,6 +22,84 @@ interface LogEntry {
   hits: string[]
   count: number
 }
+
+// ─── SYNAPSE VIEW: 型定義 ──────────────────────────
+interface SynapseNode {
+  id: string
+  fileName: string
+  words: string[]
+  x: number
+  y: number
+  vx: number
+  vy: number
+  strength: number
+  color: string
+}
+
+interface SynapseLink {
+  a: string
+  b: string
+  weight: number
+}
+
+// ─── SYNAPSE VIEW: 単語抽出（簡易版・形態素解析なし）───
+const STOP_TOKENS = new Set([
+  'これ', 'それ', 'あれ', 'この', 'その', 'あの', 'ここ', 'そこ',
+  'です', 'ます', 'した', 'して', 'ある', 'いる', 'なる', 'こと',
+  'the', 'and', 'for', 'with', 'from', 'this', 'that', 'have',
+])
+
+function extractWords(text: string): string[] {
+  // カタカナ連続・漢字連続・英単語(3文字以上)・数字付き識別子を候補として抜く
+  const matches = text.match(
+    /[ァ-ヶー]{2,}|[一-龠]{2,}|[a-zA-Z][a-zA-Z0-9_-]{2,}/g,
+  )
+  if (!matches) return []
+
+  const freq = new Map<string, number>()
+  for (const m of matches) {
+    const w = m.trim()
+    if (w.length < 2) continue
+    if (STOP_TOKENS.has(w.toLowerCase())) continue
+    freq.set(w, (freq.get(w) ?? 0) + 1)
+  }
+
+  return Array.from(freq.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([w]) => w)
+}
+
+// ─── SYNAPSE VIEW: ノードの色（系統ワードで決定） ──────
+const COLOR_RULES: [RegExp, string][] = [
+  [/渦|ワームホール|wormhole|torus|swirl/i, '#c8a96e'],
+  [/gate|ゲート|voyage|旅/i, '#8fae7d'],
+  [/voice|声|ui|archivist/i, '#7d9dae'],
+  [/mdac|絵本|enka/i, '#ae7d9d'],
+]
+
+function colorForWords(words: string[]): string {
+  const joined = words.join(' ')
+  for (const [re, color] of COLOR_RULES) {
+    if (re.test(joined)) return color
+  }
+  return '#9a9a86'
+}
+
+// ─── SYNAPSE VIEW: ノード間の共通単語からリンクを計算 ───
+function computeLinks(nodes: SynapseNode[]): SynapseLink[] {
+  const links: SynapseLink[] = []
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      const shared = nodes[i].words.filter((w) => nodes[j].words.includes(w))
+      if (shared.length > 0) {
+        links.push({ a: nodes[i].id, b: nodes[j].id, weight: shared.length })
+      }
+    }
+  }
+  return links
+}
+
 
 // ── 固定ノード ────────────────────────────────────────
 const NODES: TreeNode[] = [
@@ -169,6 +252,213 @@ function formatTime(d: Date): string {
 }
 
 // ── コンポーネント ────────────────────────────────────
+// ─── SYNAPSE VIEW: コンポーネント ─────────────────────
+function SynapseView() {
+  const [nodes, setNodes] = useState<SynapseNode[]>([])
+  const [isDragOver, setIsDragOver] = useState(false)
+  const [focusWord, setFocusWord] = useState('')
+  const animRef = useRef<number | null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
+
+  const links = useMemo(() => computeLinks(nodes), [nodes])
+
+  const addFiles = useCallback(async (files: FileList | File[]) => {
+    const list = Array.from(files).filter((f) =>
+      /\.(md|txt|log|json)$/i.test(f.name),
+    )
+    if (list.length === 0) return
+
+    const newNodes: SynapseNode[] = []
+    for (const file of list) {
+      const text = await file.text()
+      const words = extractWords(text)
+      newNodes.push({
+        id: `${file.name}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        fileName: file.name,
+        words,
+        x: 50 + Math.random() * 40 - 20,
+        y: 50 + Math.random() * 40 - 20,
+        vx: (Math.random() - 0.5) * 0.06,
+        vy: (Math.random() - 0.5) * 0.06,
+        strength: 0.5,
+        color: colorForWords(words),
+      })
+    }
+    setNodes((prev) => [...prev, ...newNodes])
+  }, [])
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault()
+      setIsDragOver(false)
+      if (e.dataTransfer.files.length > 0) addFiles(e.dataTransfer.files)
+    },
+    [addFiles],
+  )
+
+  const handleFileInput = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files) addFiles(e.target.files)
+      e.target.value = ''
+    },
+    [addFiles],
+  )
+
+  // 浮遊アニメーション：位置を更新し続ける
+  useEffect(() => {
+    const tick = () => {
+      setNodes((prev) =>
+        prev.map((n) => {
+          let nx = n.x + n.vx
+          let ny = n.y + n.vy
+          let nvx = n.vx
+          let nvy = n.vy
+          if (nx < 8 || nx > 92) nvx = -nvx
+          if (ny < 10 || ny > 90) nvy = -nvy
+          nx = Math.max(8, Math.min(92, nx))
+          ny = Math.max(10, Math.min(90, ny))
+          return { ...n, x: nx, y: ny, vx: nvx, vy: nvy }
+        }),
+      )
+      animRef.current = requestAnimationFrame(tick)
+    }
+    animRef.current = requestAnimationFrame(tick)
+    return () => {
+      if (animRef.current) cancelAnimationFrame(animRef.current)
+    }
+  }, [])
+
+  // フォーカス単語との一致でstrengthを更新（声・テキスト入力で反応させる）
+  const focusOn = useCallback((word: string) => {
+    const w = word.trim()
+    setFocusWord(w)
+    if (!w) return
+    const q = w.toLowerCase()
+    setNodes((prev) =>
+      prev.map((n) => {
+        const hit = n.words.some((word2) => word2.toLowerCase().includes(q))
+        const next = hit
+          ? Math.min(1, n.strength + 0.3)
+          : Math.max(0.15, n.strength - 0.1)
+        return { ...n, strength: next }
+      }),
+    )
+  }, [])
+
+  const clearAll = useCallback(() => {
+    setNodes([])
+    setFocusWord('')
+  }, [])
+
+  return (
+    <section className="wt-synapse">
+      <p className="wt-section-label">SYNAPSE VIEW — 思考ノード空間</p>
+
+      <div
+        className={cn('wt-synapse-drop', isDragOver && 'is-over')}
+        onDragOver={(e) => {
+          e.preventDefault()
+          setIsDragOver(true)
+        }}
+        onDragLeave={() => setIsDragOver(false)}
+        onDrop={handleDrop}
+      >
+        <p>md / txt / log / json をここにドラッグ&ドロップ</p>
+        <label className="wt-btn wt-btn-sm wt-synapse-filelabel">
+          またはファイルを選ぶ
+          <input
+            type="file"
+            multiple
+            accept=".md,.txt,.log,.json"
+            onChange={handleFileInput}
+            style={{ display: 'none' }}
+          />
+        </label>
+      </div>
+
+      <div className="wt-synapse-controls">
+        <input
+          className="wt-input"
+          placeholder="単語で指す（例：wormhole / 声 / gate）"
+          value={focusWord}
+          onChange={(e) => setFocusWord(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') focusOn(focusWord)
+          }}
+        />
+        <button className="wt-btn wt-btn-sm" onClick={() => focusOn(focusWord)}>
+          指す
+        </button>
+        <button
+          className="wt-btn wt-btn-sm wt-btn-danger"
+          onClick={clearAll}
+          disabled={nodes.length === 0}
+        >
+          全消去
+        </button>
+      </div>
+
+      <div className="wt-synapse-space" ref={containerRef}>
+        {nodes.length === 0 ? (
+          <p className="wt-synapse-empty">
+            まだノードがない。ファイルを入れると、単語が浮かび上がる。
+          </p>
+        ) : (
+          <>
+            <svg className="wt-synapse-links" viewBox="0 0 100 100" preserveAspectRatio="none">
+              {links.map((link, i) => {
+                const a = nodes.find((n) => n.id === link.a)
+                const b = nodes.find((n) => n.id === link.b)
+                if (!a || !b) return null
+                const opacity = Math.min(0.85, 0.15 + link.weight * 0.18)
+                const width = Math.min(1.2, 0.15 + link.weight * 0.18)
+                return (
+                  <line
+                    key={i}
+                    x1={a.x}
+                    y1={a.y}
+                    x2={b.x}
+                    y2={b.y}
+                    stroke="#c8a96e"
+                    strokeOpacity={opacity}
+                    strokeWidth={width}
+                  />
+                )
+              })}
+            </svg>
+
+            {nodes.map((n) => (
+              <div
+                key={n.id}
+                className="wt-synapse-node"
+                style={
+                  {
+                    left: `${n.x}%`,
+                    top: `${n.y}%`,
+                    '--node-color': n.color,
+                    '--node-strength': n.strength,
+                    transform: `translate(-50%, -50%) scale(${0.75 + n.strength * 0.5})`,
+                    opacity: 0.35 + n.strength * 0.65,
+                  } as CSSProperties
+                }
+                title={n.fileName}
+              >
+                <span className="wt-synapse-node-label">{n.fileName}</span>
+                <div className="wt-synapse-node-words">
+                  {n.words.slice(0, 4).map((w, wi) => (
+                    <span key={wi}>{w}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+    </section>
+  )
+}
+
+
 export default function WorldTreePage() {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<{ node: TreeNode; reason: string }[] | null>(null)
@@ -450,6 +740,8 @@ export default function WorldTreePage() {
             </div>
           )}
         </section>
+
+        <SynapseView />
       </main>
     </div>
   )
