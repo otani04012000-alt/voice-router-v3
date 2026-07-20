@@ -42,6 +42,7 @@ type RouteScores = {
   Perplexity: number
   GPT: number
   NotebookLM: number
+  ARCHIVIST: number
 }
 
 type VoiceRoute = {
@@ -216,6 +217,7 @@ function routeForVoice(snap: VoiceSnapshot, text: string): VoiceRoute {
     Perplexity: 18,
     GPT: 18,
     NotebookLM: 24,
+    ARCHIVIST: 12,
   }
 
   const add = (ai: keyof RouteScores, score: number, label: string) => {
@@ -233,6 +235,8 @@ function routeForVoice(snap: VoiceSnapshot, text: string): VoiceRoute {
   if (/コード|実装|修正|エラー|tsx|css|api|バグ|デバッグ/.test(t)) add("GPT", 44, "実装系キーワード")
   if (/アイデア|発散|企画|案|ブレスト|大量/.test(t)) add("Gemini", 34, "発散系キーワード")
   if (/記録|メモ|保存|ログ|議事録|覚えて/.test(t)) add("NotebookLM", 40, "記録系キーワード")
+  if (/渦巻き|渦|うずまき|昔の作品|あのhtml|あの作品|探して|回収|原典|呼び戻|world[\s-]?tree|ワールドツリー/i.test(t))
+    add("ARCHIVIST", 60, "原典回収系キーワード")
 
   const ai = pickTop(scores)
   const ordered = Object.values(scores).sort((a, b) => b - a)
@@ -262,6 +266,11 @@ function routeForVoice(snap: VoiceSnapshot, text: string): VoiceRoute {
     NotebookLM: {
       mode: "静音・記録",
       reason: "強い実行意図が薄い、または記録/保存の意図があるため、記録ルートへ回す",
+      risk: "low",
+    },
+    ARCHIVIST: {
+      mode: "原典回収・呼び戻し",
+      reason: "渦巻き・昔の作品・探して・回収などの意図が強いため、原典回収ルートへ回す",
       risk: "low",
     },
   }
