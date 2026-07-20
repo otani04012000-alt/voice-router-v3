@@ -1,0 +1,506 @@
+/* WORLD TREE — 専用スタイル */
+/* 世界観: 深緑・古い樹皮・薄い金・静かな霧 */
+
+.wt-root {
+  --wt-bg: #0a0f0a;
+  --wt-bg-2: #0e1510;
+  --wt-bg-3: #131a13;
+  --wt-border: #2a3a2a;
+  --wt-border-light: #3a5a3a;
+  --wt-gold: #c8a96e;
+  --wt-gold-dim: #8a7040;
+  --wt-text: #c4cfc0;
+  --wt-text-dim: #7a8f78;
+  --wt-text-muted: #4a5f4a;
+  --wt-green: #3a6a3a;
+  --wt-green-dim: #253025;
+  --wt-accent: #4a8a4a;
+
+  min-height: 100dvh;
+  background-color: var(--wt-bg);
+  color: var(--wt-text);
+  font-family: var(--font-noto-serif-jp, 'Noto Serif JP', serif);
+  line-height: 1.7;
+  padding: 0;
+  margin: 0;
+}
+
+/* ── ヘッダー ── */
+.wt-header {
+  border-bottom: 1px solid var(--wt-border);
+  padding: 1.5rem 2rem 1.25rem;
+  background-color: var(--wt-bg);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.wt-header-title {
+  font-size: 0.65rem;
+  letter-spacing: 0.25em;
+  color: var(--wt-text-muted);
+  text-transform: uppercase;
+  margin: 0 0 0.2rem;
+  font-family: var(--font-geist-mono, monospace);
+}
+
+.wt-header-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--wt-gold);
+  margin: 0;
+  letter-spacing: 0.08em;
+}
+
+/* ── メインレイアウト ── */
+.wt-main {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 2rem 2rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+/* ── セクションカード ── */
+.wt-section {
+  border: 1px solid var(--wt-border);
+  background-color: var(--wt-bg-2);
+  padding: 1.5rem;
+}
+
+.wt-section-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  color: var(--wt-text-muted);
+  text-transform: uppercase;
+  font-family: var(--font-geist-mono, monospace);
+  margin: 0 0 0.8rem;
+}
+
+.wt-section-heading {
+  font-size: 0.9rem;
+  color: var(--wt-gold);
+  font-weight: 600;
+  margin: 0 0 1rem;
+  letter-spacing: 0.05em;
+}
+
+/* ── コマンドハブ上部 ── */
+.wt-hub-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background-color: var(--wt-border);
+  border: 1px solid var(--wt-border);
+  margin-bottom: 1.25rem;
+}
+
+.wt-hub-cell {
+  background-color: var(--wt-bg-2);
+  padding: 1rem 1.25rem;
+}
+
+.wt-hub-cell-label {
+  font-size: 0.58rem;
+  letter-spacing: 0.25em;
+  color: var(--wt-text-muted);
+  text-transform: uppercase;
+  font-family: var(--font-geist-mono, monospace);
+  margin: 0 0 0.3rem;
+}
+
+.wt-hub-cell-value {
+  font-size: 0.88rem;
+  color: var(--wt-text);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.wt-hub-cell-value strong {
+  color: var(--wt-gold-dim);
+  font-weight: 600;
+}
+
+/* ── 原則リスト ── */
+.wt-principles {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.wt-principles li {
+  font-size: 0.82rem;
+  color: var(--wt-text-dim);
+  padding-left: 1rem;
+  position: relative;
+}
+
+.wt-principles li::before {
+  content: '—';
+  position: absolute;
+  left: 0;
+  color: var(--wt-border-light);
+}
+
+/* ── セクション: NOW / TARGET / NON-NEG / NEXT3 ── */
+.wt-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.wt-list li {
+  font-size: 0.85rem;
+  color: var(--wt-text);
+  padding: 0.6rem 0.9rem;
+  background-color: var(--wt-bg-3);
+  border-left: 2px solid var(--wt-border-light);
+  line-height: 1.55;
+}
+
+.wt-list li.wt-list-numbered {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.wt-list-num {
+  color: var(--wt-gold-dim);
+  font-family: var(--font-geist-mono, monospace);
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  padding-top: 0.05rem;
+}
+
+/* ── CORE NODES ── */
+.wt-nodes {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background-color: var(--wt-border);
+  border: 1px solid var(--wt-border);
+}
+
+.wt-node {
+  background-color: var(--wt-bg-2);
+  padding: 0.9rem 1.25rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  align-items: start;
+}
+
+.wt-node-name {
+  font-size: 0.88rem;
+  color: var(--wt-text);
+  font-weight: 500;
+  margin: 0 0 0.2rem;
+}
+
+.wt-node-series {
+  font-size: 0.68rem;
+  color: var(--wt-text-muted);
+  font-family: var(--font-geist-mono, monospace);
+  letter-spacing: 0.1em;
+}
+
+.wt-node-badge {
+  font-size: 0.62rem;
+  font-family: var(--font-geist-mono, monospace);
+  letter-spacing: 0.12em;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.wt-badge-now {
+  border-color: var(--wt-gold-dim);
+  color: var(--wt-gold);
+  background-color: rgba(200, 169, 110, 0.06);
+}
+
+.wt-badge-next {
+  border-color: var(--wt-border-light);
+  color: var(--wt-text-dim);
+  background-color: transparent;
+}
+
+.wt-badge-parked {
+  border-color: var(--wt-text-muted);
+  color: var(--wt-text-muted);
+  background-color: transparent;
+}
+
+/* ── RECALL CONSOLE ── */
+.wt-recall {
+  border: 1px solid var(--wt-border);
+  background-color: var(--wt-bg-2);
+  padding: 1.5rem;
+}
+
+.wt-recall-row {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+
+.wt-recall-input {
+  flex: 1;
+  background-color: var(--wt-bg);
+  border: 1px solid var(--wt-border-light);
+  color: var(--wt-text);
+  font-family: var(--font-noto-serif-jp, serif);
+  font-size: 0.9rem;
+  padding: 0.7rem 1rem;
+  min-height: 44px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.wt-recall-input:focus {
+  border-color: var(--wt-gold-dim);
+}
+
+.wt-recall-input::placeholder {
+  color: var(--wt-text-muted);
+  font-size: 0.82rem;
+}
+
+.wt-btn {
+  background-color: var(--wt-bg-3);
+  border: 1px solid var(--wt-border-light);
+  color: var(--wt-text);
+  font-family: var(--font-noto-serif-jp, serif);
+  font-size: 0.85rem;
+  padding: 0 1.2rem;
+  min-height: 44px;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: background-color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.wt-btn:hover {
+  background-color: var(--wt-green-dim);
+  border-color: var(--wt-green);
+}
+
+.wt-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.wt-btn-sm {
+  font-size: 0.78rem;
+  padding: 0 0.9rem;
+  min-height: 38px;
+}
+
+.wt-btn-danger {
+  border-color: #5a2a2a;
+  color: #a06060;
+}
+
+.wt-btn-danger:hover {
+  background-color: #2a0f0f;
+  border-color: #8a3a3a;
+}
+
+/* ── 検索結果 ── */
+.wt-results {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.wt-result-card {
+  border: 1px solid var(--wt-border-light);
+  background-color: var(--wt-bg-3);
+  padding: 1rem 1.25rem;
+}
+
+.wt-result-name {
+  font-size: 0.92rem;
+  color: var(--wt-gold);
+  font-weight: 600;
+  margin: 0 0 0.7rem;
+}
+
+.wt-result-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem 1rem;
+}
+
+.wt-result-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.wt-result-field-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  color: var(--wt-text-muted);
+  text-transform: uppercase;
+  font-family: var(--font-geist-mono, monospace);
+}
+
+.wt-result-field-value {
+  font-size: 0.82rem;
+  color: var(--wt-text-dim);
+  line-height: 1.5;
+}
+
+.wt-result-reason {
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--wt-border);
+  font-size: 0.76rem;
+  color: var(--wt-text-muted);
+  font-family: var(--font-geist-mono, monospace);
+}
+
+.wt-result-reason span {
+  color: var(--wt-accent);
+}
+
+.wt-no-result {
+  font-size: 0.84rem;
+  color: var(--wt-text-muted);
+  padding: 1rem 1.25rem;
+  border: 1px dashed var(--wt-border);
+  background-color: var(--wt-bg-3);
+  font-style: italic;
+}
+
+/* ── RECALL LOG ── */
+.wt-log {
+  border: 1px solid var(--wt-border);
+  background-color: var(--wt-bg-2);
+  padding: 1.5rem;
+}
+
+.wt-log-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.8rem 0 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--wt-border);
+  margin-bottom: 1rem;
+}
+
+.wt-log-empty {
+  font-size: 0.8rem;
+  color: var(--wt-text-muted);
+  font-family: var(--font-geist-mono, monospace);
+  padding: 0.5rem 0;
+}
+
+.wt-log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.wt-log-row {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr auto;
+  gap: 0.8rem;
+  align-items: baseline;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--wt-border);
+  font-size: 0.78rem;
+}
+
+.wt-log-time {
+  font-family: var(--font-geist-mono, monospace);
+  color: var(--wt-text-muted);
+  font-size: 0.72rem;
+}
+
+.wt-log-query {
+  color: var(--wt-text-dim);
+}
+
+.wt-log-count {
+  font-family: var(--font-geist-mono, monospace);
+  color: var(--wt-gold-dim);
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.wt-log-hits {
+  grid-column: 2 / 4;
+  color: var(--wt-text-muted);
+  font-size: 0.72rem;
+  font-family: var(--font-geist-mono, monospace);
+  padding-left: 0;
+}
+
+/* ── Parking / Non-neg / Next3 二列グリッド ── */
+.wt-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+/* ── レスポンシブ ── */
+@media (max-width: 600px) {
+  .wt-header {
+    padding: 1.25rem 1rem 1rem;
+  }
+
+  .wt-main {
+    padding: 1.25rem 1rem 3rem;
+    gap: 1.75rem;
+  }
+
+  .wt-hub-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wt-result-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wt-log-row {
+    grid-template-columns: 4.5rem 1fr auto;
+    gap: 0.5rem;
+  }
+
+  .wt-two-col {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .wt-recall-row {
+    flex-direction: column;
+  }
+
+  .wt-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .wt-log-actions {
+    flex-direction: column;
+  }
+}
+
+/* ── prefers-reduced-motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .wt-btn,
+  .wt-recall-input {
+    transition: none;
+  }
+}
