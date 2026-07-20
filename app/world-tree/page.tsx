@@ -75,26 +75,92 @@ function normalize(s: string): string {
   return s.replace(/\s+/g, '').toLowerCase()
 }
 
-function findMatchReason(node: TreeNode, query: string): string {
-  const q = normalize(query)
+// 別名辞書：トークンがヒットしたら正式名（系統名）も検索語に加える
+const ALIAS_MAP: Record<string, string[]> = {
+  'Wormhole': ['渦', 'ワームホール', 'wormhole'],
+  'Wormhole Archive': ['3d', '展示', 'アーカイブ'],
+  'CryptoGate': ['gate', 'ゲート'],
+  'AI UI': ['声', 'voice'],
+  'UI Experiments': ['ui', 'インターフェース'],
+  'VOYAGE': ['旅', 'voyage'],
+}
+
+// ストップワード：検索語として使わない助詞・汎用語
+const STOP_WORDS = new Set([
+  'の', 'は', 'を', 'に', 'で', 'と', 'や', 'が', 'も',
+  'へ', 'から', 'より', 'あの', 'この', 'その', '作品',
+  '設計', '展示',
+])
+
+// 入力文を読点・句読点・空白・スラッシュ・ハイフン・主要な助詞で分割してトークン化
+function tokenize(input: string): string[] {
+  return input
+    .split(/[\s、。・\/\-]+|の|は|を|に|で|と|や|が|も|へ/g)
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0 && !STOP_WORDS.has(t))
+}
+
+// トークンが別名辞書にヒットしたら、正式名＋その別名群を検索語に加える
+function expandWithAliases(tokens: string[]): string[] {
+  const expanded = new Set(tokens.map((t) => normalize(t)))
+  for (const token of tokens) {
+    const nt = normalize(token)
+    for (const [canonical, aliases] of Object.entries(ALIAS_MAP)) {
+      const normalizedAliases = aliases.map((a) => normalize(a))
+      if (normalizedAliases.includes(nt) || normalize(canonical) === nt) {
+        expanded.add(normalize(canonical))
+        normalizedAliases.forEach((a) => expanded.add(a))
+      }
+    }
+  }
+  return Array.from(expanded)
+}
+
+function findMatchReasonTokens(
+  node: TreeNode,
+  tokens: string[],
+): { reason: string; matchedTokens: string[] } {
   const fields: [string, string][] = [
     ['名前', node.name],
     ['系統', node.series],
     ['状態', node.status],
     ['次の一手', node.nextAction],
   ]
-  const matched = fields
-    .filter(([, v]) => normalize(v).includes(q))
-    .map(([k]) => k)
-  return matched.length > 0 ? matched.join('・') + ' に一致' : '関連ワードに一致'
+
+  const hitParts: string[] = []
+  const matchedTokens = new Set<string>()
+
+  for (const [label, value] of fields) {
+    const normalizedValue = normalize(value)
+    const tokenHits = tokens.filter((t) => normalizedValue.includes(t))
+    if (tokenHits.length > 0) {
+      hitParts.push(label)
+      tokenHits.forEach((t) => matchedTokens.add(t))
+    }
+  }
+
+  const reason =
+    hitParts.length > 0 ? hitParts.join('・') + ' に一致' : '関連ワードに一致'
+
+  return { reason, matchedTokens: Array.from(matchedTokens) }
 }
 
 function searchNodes(query: string): { node: TreeNode; reason: string }[] {
   if (!query.trim()) return []
-  const q = normalize(query)
+
+  const rawTokens = tokenize(query)
+  if (rawTokens.length === 0) return []
+
+  const tokens = expandWithAliases(rawTokens)
+
   return NODES.filter((n) =>
-    [n.name, n.series, n.status, n.nextAction].some((v) => normalize(v).includes(q))
-  ).map((node) => ({ node, reason: findMatchReason(node, query) }))
+    tokens.some((t) =>
+      [n.name, n.series, n.status, n.nextAction].some((v) => normalize(v).includes(t)),
+    ),
+  ).map((node) => {
+    const { reason } = findMatchReasonTokens(node, tokens)
+    return { node, reason }
+  })
 }
 
 // ── 時刻フォーマット ──────────────────────────────────
