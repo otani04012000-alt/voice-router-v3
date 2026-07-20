@@ -2,7 +2,10 @@
 
 import { useState, useCallback, useEffect, useMemo, useRef, KeyboardEvent } from 'react'
 import type { CSSProperties } from 'react'
+import dynamic from 'next/dynamic'
 import './world-tree.css'
+
+const SynapseSphere = dynamic(() => import('./SynapseSphere'), { ssr: false })
 
 function cn(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(' ')
@@ -271,6 +274,7 @@ function SynapseView() {
   const [nodes, setNodes] = useState<SynapseNode[]>([])
   const [isDragOver, setIsDragOver] = useState(false)
   const [focusWord, setFocusWord] = useState('')
+  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d')
   const animRef = useRef<number | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
 
@@ -367,7 +371,24 @@ function SynapseView() {
 
   return (
     <section className="wt-synapse">
-      <p className="wt-section-label">SYNAPSE VIEW — 思考ノード空間</p>
+      <div className="wt-synapse-header">
+        <p className="wt-section-label">SYNAPSE VIEW — 思考ノード空間</p>
+        <div className="wt-synapse-viewtoggle">
+          <button
+            className={cn('wt-btn wt-btn-sm', viewMode === '2d' && 'is-active')}
+            onClick={() => setViewMode('2d')}
+          >
+            平面
+          </button>
+          <button
+            className={cn('wt-btn wt-btn-sm', viewMode === '3d' && 'is-active')}
+            onClick={() => setViewMode('3d')}
+            disabled={nodes.length === 0}
+          >
+            立体
+          </button>
+        </div>
+      </div>
 
       <div
         className={cn('wt-synapse-drop', isDragOver && 'is-over')}
@@ -413,6 +434,21 @@ function SynapseView() {
         </button>
       </div>
 
+      {viewMode === '3d' && nodes.length > 0 ? (
+        <SynapseSphere
+          nodes={nodes.map((n) => ({
+            id: n.id,
+            fileName: n.fileName,
+            words: n.words,
+            color: n.color,
+            strength: n.strength,
+          }))}
+          onSelect={(id) => {
+            const n = nodes.find((x) => x.id === id)
+            if (n) focusOn(n.words[0] ?? n.fileName)
+          }}
+        />
+      ) : (
       <div className="wt-synapse-space" ref={containerRef}>
         {/* 背景の浮遊パーティクル：常時表示、奥行きの空気感を出す */}
         <svg className="wt-synapse-bg-particles" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
@@ -511,6 +547,7 @@ function SynapseView() {
           </>
         )}
       </div>
+      )}
     </section>
   )
 }
