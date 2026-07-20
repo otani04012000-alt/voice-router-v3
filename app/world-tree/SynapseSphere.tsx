@@ -98,22 +98,26 @@ function FileNode({
         <div
           style={{
             fontFamily: "'Noto Serif JP', serif",
-            fontSize: '0.68rem',
-            color: '#eae6d8',
-            background: 'rgba(8, 12, 8, 0.88)',
-            border: `1px solid ${color}`,
-            borderRadius: 6,
-            padding: '3px 9px',
+            fontSize: '0.78rem',
+            fontWeight: 600,
+            color: '#f4f1e6',
+            background: `linear-gradient(135deg, ${color}2e, rgba(20,20,24,0.55))`,
+            border: `1px solid ${color}88`,
+            borderRadius: 999,
+            padding: '7px 16px',
             whiteSpace: 'nowrap',
-            textShadow: `0 0 8px ${color}`,
-            boxShadow: `0 0 12px ${color}33`,
-            maxWidth: 180,
+            backdropFilter: 'blur(6px)',
+            textShadow: '0 1px 3px rgba(0,0,0,0.6)',
+            boxShadow: `0 0 18px ${color}40, inset 0 0 12px ${color}22`,
+            maxWidth: 200,
           }}
         >
-          <div style={{ fontWeight: 700, marginBottom: 2 }}>{fileName}</div>
-          <div style={{ opacity: 0.75, fontSize: '0.6rem' }}>
-            {words.slice(0, 3).join(' · ')}
-          </div>
+          <div>{fileName}</div>
+          {words.length > 0 && (
+            <div style={{ opacity: 0.7, fontSize: '0.62rem', fontWeight: 400, marginTop: 2 }}>
+              {words.slice(0, 3).join(' · ')}
+            </div>
+          )}
         </div>
       </Html>
     </group>
@@ -211,14 +215,19 @@ export default function SynapseSphere({
         height: '70vh',
         position: 'relative',
         background:
-          'radial-gradient(ellipse at center, rgba(200,169,110,0.06) 0%, transparent 70%)',
+          'radial-gradient(circle at 18% 25%, rgba(255,90,60,0.16), transparent 42%), ' +
+          'radial-gradient(circle at 78% 30%, rgba(60,200,140,0.15), transparent 45%), ' +
+          'radial-gradient(circle at 50% 75%, rgba(140,90,220,0.16), transparent 48%), ' +
+          'radial-gradient(circle at 85% 80%, rgba(60,140,230,0.13), transparent 45%), ' +
+          '#05070a',
       }}
     >
       <Canvas camera={{ position: [0, 0, 9], fov: 55 }} style={{ width: '100%', height: '100%' }}>
-        <ambientLight intensity={0.35} />
-        <pointLight position={[6, 6, 6]} intensity={1.4} color="#c8a96e" />
-        <pointLight position={[-6, -4, -2]} intensity={0.8} color="#8fae7d" />
-        <pointLight position={[0, 0, 3]} intensity={0.9} color="#ffffff" />
+        <ambientLight intensity={0.45} />
+        <pointLight position={[6, 6, 6]} intensity={1.4} color="#ff8a5c" />
+        <pointLight position={[-6, -4, -2]} intensity={1.1} color="#5cd6a0" />
+        <pointLight position={[0, -3, 4]} intensity={1.0} color="#a06cf0" />
+        <pointLight position={[0, 0, 3]} intensity={0.7} color="#ffffff" />
         <Stars radius={60} depth={30} count={2200} factor={3.2} fade speed={0.4} />
         <SynapseGraph nodes={nodes} onSelect={onSelect} />
         <OrbitControls
