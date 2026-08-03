@@ -36,10 +36,11 @@
        https://denkihpvar-tfnhezfh.manus.space  
   内容: LP群のURL管理、CVRを意識したランディングの連結。[file:92]
 
-- 2026-08-01  
-  SUSHI QUEST v2  
-  URL: （Manus上のzip配布URLを記入）  
-  内容: zip配布形式のUI・ゲーム的体験の試作。[file:92]
+- 2026-08-03  
+  10万ボルト QUEST  
+  URL: https://10manvolt-quest.pplx.app/  
+  内容: 東京都の蓄電池・太陽光補助金を、RPGクエスト形式で解説する特設サイト。
+        勇者・銀行員・施工会社・採用希望者の4視点でストーリーを構成。[attached_file:1]
 
 - 2026-08-03  
   Gmail with Calendar スキル棚卸し  
