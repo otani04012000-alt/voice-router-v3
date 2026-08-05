@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useMemo, useRef, KeyboardEvent } from
 import type { CSSProperties } from 'react'
 import dynamic from 'next/dynamic'
 import './world-tree.css'
+import FlowLink from '@/app/components/FlowLink'
 
 const SynapseSphere = dynamic(() => import('./SynapseSphere'), { ssr: false })
 
@@ -837,6 +838,7 @@ export default function WorldTreePage() {
 
         <SynapseView />
       </main>
+      <FlowLink source="world-tree" />
     </div>
   )
 }
