@@ -28,6 +28,7 @@ const SpeechRecognition =
     : null
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import "./voice-router.css"
+import FlowLink from '@/app/components/FlowLink'
 
 type VoiceSnapshot = {
   low: number
@@ -709,6 +710,7 @@ export default function VoiceRouterPage() {
           </div>
         </section>
       </section>
+      <FlowLink source="voice-router" />
     </main>
   )
 }
