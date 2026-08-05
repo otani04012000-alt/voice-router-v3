@@ -3,9 +3,16 @@
  *
  * このリポジトリのデモを見に来るのは制作会社やエンジニアなので、
  * 価格ではなく「この演出を自社案件へ組み込めるか」を入口にする。
- * source は流入元の計測用。遷移先は別プロジェクトのため絶対URLで開く。
+ * 遷移先は別プロジェクトのため絶対URLで開く。
+ *
+ * 流入元は `/flow/<source>` というパスで表す。Vercel Web Analytics は
+ * requestPath からクエリ文字列を除去して記録するため、`?from=` では
+ * 流入元が残らない。パスに含めることで、どのデモから来たかを集計できる。
+ *
+ * rel に noreferrer を付けるとリファラが送出されず、遷移先の Analytics でも
+ * 流入元を判定できなくなる。タブ乗っ取りの防止は noopener だけで足りる。
  */
-const FLOW_URL = 'https://gate-v0-world-tree.vercel.app/flow'
+const FLOW_BASE = 'https://gate-v0-world-tree.vercel.app/flow'
 
 export default function FlowLink({
   source,
@@ -14,12 +21,12 @@ export default function FlowLink({
   source: string
   label?: string
 }) {
-  const href = `${FLOW_URL}?from=${encodeURIComponent(source)}`
+  const href = `${FLOW_BASE}/${encodeURIComponent(source)}`
 
   return (
     <>
       <style>{FLOW_LINK_CSS}</style>
-      <a className="flowlink" href={href} target="_blank" rel="noopener noreferrer">
+      <a className="flowlink" href={href} target="_blank" rel="noopener">
         <span className="flowlink-dot" aria-hidden="true" />
         <span className="flowlink-label">{label}</span>
         <span className="flowlink-arrow" aria-hidden="true">
