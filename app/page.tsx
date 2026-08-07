@@ -68,6 +68,17 @@ export default function Page() {
           <p className="mt-5 max-w-xl text-pretty text-base leading-relaxed text-muted-foreground">
             どれを選べばいいか一目で分かる早見表。用途を主役に、注意点は静かに。
           </p>
+          {/* 神域HEROから黒松までの一続き。制作OSの主張はそちらに置いている。 */}
+          <a
+            href="/shinden"
+            className="group mt-9 inline-flex items-center gap-4 text-xs uppercase tracking-[0.3em] text-gold/80 transition-colors hover:text-gold"
+          >
+            View Systems
+            <span
+              aria-hidden="true"
+              className="block h-px w-14 bg-gold/60 transition-all duration-500 group-hover:w-20"
+            />
+          </a>
         </header>
 
         <div className="mb-20">
