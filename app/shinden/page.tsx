@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import TreeReveal from '@/app/components/TreeReveal';
 
 const SYS: [string, string, string][] = [
   ['01', '記録', '決定と経緯を残す。残らなければ無かった事。'],
@@ -148,7 +149,7 @@ export default function Shinden() {
       <section style={{ position: 'relative', height: '100vh', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
           {hasImg ? (
-            <img ref={bg} src="/shinden.jpg" alt="" onError={() => setHasImg(false)}
+            <img ref={bg} src="/shinden.webp" alt="" onError={() => setHasImg(false)}
               style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', transform: 'scale(1.16)', willChange: 'transform' }} />
           ) : (
             <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 56% 12%, rgba(73,148,198,.55), transparent 55%), linear-gradient(180deg,#1e2220,#183247 33%,#10140f 70%,#050604)' }} />
@@ -176,6 +177,10 @@ export default function Shinden() {
           VIEW SYSTEMS<i style={{ display: 'block', width: 70, height: 1, background: '#c9a94e' }} />
         </a>
       </section>
+
+      {/* 神域で述べた「根を設計する」を、根の張った黒松で裏づける。
+          金文字はHERO本文と重複するため出さない。 */}
+      <TreeReveal showLine={false} heightVh={340} />
 
       <section style={{ padding: '18vh 8vw', maxWidth: 1080, margin: '0 auto' }}>
         <div style={{ font: `10px ${mono}`, letterSpacing: '.38em', color: '#d6bd70', marginBottom: 40 }}>01 / 系統 :: CORE SUBSYSTEMS</div>
