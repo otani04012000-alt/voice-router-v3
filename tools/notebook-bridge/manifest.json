@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "WORLD TREE Notebook Bridge",
+  "version": "0.1.0",
+  "description": "Gemini Notebookの表示テキストをMarkdown化し、あなたのGitHubへ保存します。",
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": ["https://notebook.google.com/*", "https://api.github.com/*"],
+  "action": {"default_title": "Notebookを同期", "default_popup": "popup.html"},
+  "content_scripts": [{"matches": ["https://notebook.google.com/*"], "js": ["content.js"], "run_at": "document_idle"}]
+}
