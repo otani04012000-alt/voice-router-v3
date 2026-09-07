@@ -1,211 +1,278 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { Search } from "lucide-react"
-import { models, features, logs } from "@/lib/perplexity-data"
-import { QuickRules } from "@/components/quick-rules"
-import { InfoCard } from "@/components/info-card"
-import { ProjectGuide } from "@/components/project-guide"
+import { useState } from "react"
 
-export default function Page() {
-  const [query, setQuery] = useState("")
+/**
+ * 秘密の部屋 - 入室ページ
+ *
+ * 背景は otani-izanami-v2.kasumi.html のヒーロー演出（神社鳥居 + 霞 + ハロー）を流用。
+ * ここに多言語ウェルカム文と、ルーム作成 / URL入室の導線を乗せる。
+ */
 
-  const q = query.trim().toLowerCase()
+const WELCOME_MESSAGES = [
+  { lang: "ja", text: "あなたへの専属コンシェルジュサポートルーム・秘密の部屋へようこそ。" },
+  { lang: "zh", text: "欢迎来到专属礼宾支持室・秘密房间。" },
+  { lang: "en", text: "Welcome to your dedicated concierge support room — The Secret Room." },
+  { lang: "vi", text: "Chào mừng đến phòng hỗ trợ concierge riêng của bạn — Căn Phòng Bí Mật." },
+  { lang: "km", text: "សូមស្វាគមន៍មកកាន់បន្ទប់ជំនួយផ្ទាល់ខ្លួនរបស់អ្នក - បន្ទប់សម្ងាត់ពិសេស" },
+]
 
-  const match = (text: string) => text.toLowerCase().includes(q)
-
-  const filteredModels = useMemo(
-    () =>
-      !q
-        ? models
-        : models.filter(
-            (m) =>
-              match(m.name) ||
-              match(m.use) ||
-              match(m.demerit) ||
-              (m.tag ? match(m.tag) : false),
-          ),
-    [q],
-  )
-
-  const filteredFeatures = useMemo(
-    () =>
-      !q
-        ? features
-        : features.filter(
-            (f) => match(f.name) || match(f.use) || match(f.demerit),
-          ),
-    [q],
-  )
-
-  const filteredLogs = useMemo(
-    () =>
-      !q
-        ? logs
-        : logs.filter(
-            (l) =>
-              match(l.name) ||
-              match(l.use) ||
-              match(l.demerit) ||
-              (l.point ? match(l.point) : false),
-          ),
-    [q],
-  )
-
-  const total =
-    filteredModels.length + filteredFeatures.length + filteredLogs.length
-
-  return (
-    <main className="ambient-bg min-h-screen">
-      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
-        <header className="mb-16 flex flex-col items-center text-center">
-          <p className="mb-3 text-xs font-medium tracking-[0.35em] text-gold uppercase">
-            Perplexity
-          </p>
-          <h1 className="font-heading text-balance text-4xl font-black tracking-tight text-foreground sm:text-6xl">
-            モデル・機能 使い分けガイド
-          </h1>
-          <p className="mt-5 max-w-xl text-pretty text-base leading-relaxed text-muted-foreground">
-            どれを選べばいいか一目で分かる早見表。用途を主役に、注意点は静かに。
-          </p>
-          {/* 神域HEROから黒松までの一続き。制作OSの主張はそちらに置いている。 */}
-          <a
-            href="/shinden"
-            className="group mt-9 inline-flex items-center gap-4 text-xs uppercase tracking-[0.3em] text-gold/80 transition-colors hover:text-gold"
-          >
-            View Systems
-            <span
-              aria-hidden="true"
-              className="block h-px w-14 bg-gold/60 transition-all duration-500 group-hover:w-20"
-            />
-          </a>
-        </header>
-
-        <div className="mb-20">
-          <QuickRules />
-        </div>
-
-        <div className="mb-14 flex flex-col items-center">
-          <div className="mb-10 h-px w-full max-w-xs gold-hairline" />
-          <div className="sticky top-4 z-10 w-full max-w-xl">
-            <label htmlFor="filter" className="sr-only">
-              モデル・機能を検索
-            </label>
-            <div className="glass relative rounded-2xl">
-              <Search
-                className="pointer-events-none absolute left-5 top-1/2 size-5 -translate-y-1/2 text-gold/70"
-                aria-hidden="true"
-              />
-              <input
-                id="filter"
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="名前・用途・注意点で絞り込み（例: 文章、コード、調査）"
-                className="w-full rounded-2xl bg-transparent py-4 pl-14 pr-5 text-foreground outline-none placeholder:text-muted-foreground/70 focus:ring-2 focus:ring-[rgba(201,168,76,0.35)]"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-16">
-          {total === 0 ? (
-            <p className="glass rounded-2xl py-16 text-center text-muted-foreground">
-              「{query}」に一致する項目は見つかりませんでした。
-            </p>
-          ) : (
-            <>
-              {filteredModels.length > 0 && (
-                <Section
-                  title="モデル"
-                  count={filteredModels.length}
-                  id="models"
-                >
-                  {filteredModels.map((m) => (
-                    <InfoCard key={m.name} item={m} variant="model" />
-                  ))}
-                </Section>
-              )}
-
-              {filteredFeatures.length > 0 && (
-                <Section
-                  title="機能"
-                  count={filteredFeatures.length}
-                  id="features"
-                >
-                  {filteredFeatures.map((f) => (
-                    <InfoCard key={f.name} item={f} variant="feature" />
-                  ))}
-                </Section>
-              )}
-            </>
-          )}
-
-          <div className="h-px w-full max-w-xs gold-hairline mx-auto" />
-
-          <ProjectGuide />
-
-          {filteredLogs.length > 0 && (
-            <Section
-              title="実証ログ"
-              subtitle="俺がアプリになる構想 — 自分専用の制作ハブを組み立てる検証記録。"
-              count={filteredLogs.length}
-              id="logs"
-            >
-              {filteredLogs.map((l) => (
-                <InfoCard key={l.name} item={l} variant="log" />
-              ))}
-            </Section>
-          )}
-        </div>
-
-        <footer className="mt-24 flex flex-col items-center gap-4 text-center">
-          <div className="h-px w-full max-w-xs gold-hairline" />
-          <p className="text-xs tracking-wide text-muted-foreground">
-            用途を主役に、注意点は控えめに。迷ったら「迷ったらコレ」へ。
-          </p>
-        </footer>
-      </div>
-    </main>
-  )
+function generateRoomId() {
+  return Math.random().toString(36).slice(2, 8)
 }
 
-function Section({
-  title,
-  subtitle,
-  count,
-  id,
-  children,
-}: {
-  title: string
-  subtitle?: string
-  count: number
-  id: string
-  children: React.ReactNode
-}) {
+export default function Page() {
+  const [joinUrl, setJoinUrl] = useState("")
+
+  const handleCreateRoom = () => {
+    const roomId = generateRoomId()
+    window.location.href = `/secret-room/${roomId}`
+  }
+
+  const handleJoin = () => {
+    const trimmed = joinUrl.trim()
+    if (!trimmed) return
+    // URL全体でもルームIDだけでも受け付ける
+    const idMatch = trimmed.match(/secret-room\/([a-zA-Z0-9]+)/)
+    const roomId = idMatch ? idMatch[1] : trimmed
+    window.location.href = `/secret-room/${roomId}`
+  }
+
   return (
-    <section aria-labelledby={`${id}-title`}>
-      <div className="mb-6 flex flex-col gap-2">
-        <div className="flex items-baseline gap-3">
-          <h2
-            id={`${id}-title`}
-            className="font-heading text-2xl font-bold tracking-tight text-foreground"
-          >
-            {title}
-          </h2>
-          <span className="font-mono text-sm text-gold/70">
-            {String(count).padStart(2, "0")}
-          </span>
+    <main className="room-hero">
+      <div className="room-hero-img" aria-hidden="true" />
+      <div className="room-hero-overlay" aria-hidden="true" />
+      <div className="room-hero-cloud" aria-hidden="true" />
+      <div className="halo" aria-hidden="true" />
+      <div className="kasumi" aria-hidden="true">
+        <i className="k1" />
+        <i className="k2" />
+        <i className="k3" />
+      </div>
+
+      <div className="room-content">
+        <div className="room-welcome">
+          {WELCOME_MESSAGES.map((m) => (
+            <p key={m.lang} className={`room-welcome-line room-welcome-${m.lang}`}>
+              {m.text}
+            </p>
+          ))}
         </div>
-        {subtitle && (
-          <p className="max-w-2xl text-pretty text-sm leading-relaxed text-muted-foreground">
-            {subtitle}
-          </p>
-        )}
+
+        <div className="room-actions">
+          <button type="button" className="room-btn room-btn-primary" onClick={handleCreateRoom}>
+            部屋をつくる
+          </button>
+
+          <div className="room-join">
+            <input
+              type="text"
+              inputMode="text"
+              placeholder="URLまたはコードを入力"
+              value={joinUrl}
+              onChange={(e) => setJoinUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleJoin()
+              }}
+              className="room-join-input"
+            />
+            <button type="button" className="room-btn room-btn-secondary" onClick={handleJoin}>
+              入室する
+            </button>
+          </div>
+        </div>
       </div>
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {children}
-      </div>
-    </section>
+
+      <style jsx global>{`
+        html, body { margin: 0; padding: 0; background: #0e0b08; }
+      `}</style>
+
+      <style jsx>{`
+        .room-hero {
+          position: relative;
+          min-height: 100svh;
+          overflow: hidden;
+          display: grid;
+          place-items: center;
+          font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+        }
+        .room-hero-img {
+          position: absolute;
+          inset: 0;
+          background-image: url('/secret-room/hero-shrine.jpg');
+          background-size: cover;
+          background-position: center;
+          transform: scale(1.08);
+        }
+        .room-hero-overlay {
+          position: absolute;
+          inset: 0;
+          background:
+            radial-gradient(130% 90% at 50% 24%, transparent 34%, rgba(20,17,12,.32) 74%, rgba(20,17,12,.66) 100%),
+            linear-gradient(180deg, rgba(20,17,12,.42) 0%, transparent 26%, transparent 52%, rgba(20,17,12,.78) 100%);
+        }
+        .room-hero-cloud {
+          position: absolute;
+          top: 0; left: 0; right: 0;
+          height: 38%;
+          pointer-events: none;
+          opacity: 0;
+        }
+        .kasumi {
+          position: absolute;
+          top: 0; left: 0; right: 0;
+          height: 22%;
+          pointer-events: none;
+          overflow: hidden;
+          isolation: isolate;
+          -webkit-mask-image: linear-gradient(to bottom, #000 0%, rgba(0,0,0,.8) 42%, transparent 100%);
+          mask-image: linear-gradient(to bottom, #000 0%, rgba(0,0,0,.8) 42%, transparent 100%);
+        }
+        .kasumi i {
+          position: absolute;
+          top: -10%; left: -40%;
+          width: 180%; height: 120%;
+          display: block;
+          will-change: transform;
+          backface-visibility: hidden;
+        }
+        .kasumi .k1 {
+          background: linear-gradient(90deg, transparent 0%, rgba(150,168,190,.11) 20%, rgba(172,188,206,.16) 46%, rgba(146,164,188,.10) 70%, transparent 100%);
+          filter: blur(62px); opacity: .55;
+          animation: kasumi-a 46s linear infinite;
+        }
+        .kasumi .k2 {
+          background:
+            radial-gradient(120% 62% at 32% 42%, rgba(178,194,210,.13), transparent 72%),
+            radial-gradient(92% 54% at 76% 32%, rgba(146,166,190,.10), transparent 74%);
+          filter: blur(76px); opacity: .45;
+          animation: kasumi-b 61s linear infinite;
+        }
+        .kasumi .k3 {
+          background: linear-gradient(100deg, transparent 12%, rgba(206,218,230,.09) 50%, transparent 88%);
+          filter: blur(48px); opacity: .28;
+          animation: kasumi-a 37s linear infinite reverse;
+        }
+        @keyframes kasumi-a {
+          from { transform: translate3d(-8%,0,0); }
+          to { transform: translate3d(8%,0,0); }
+        }
+        @keyframes kasumi-b {
+          0% { transform: translate3d(6%,0,0) scaleY(1); }
+          50% { transform: translate3d(-6%,0,0) scaleY(1.06); }
+          100% { transform: translate3d(6%,0,0) scaleY(1); }
+        }
+        .halo {
+          position: absolute;
+          pointer-events: none;
+          border-radius: 50%;
+          left: 50%; top: 46%;
+          width: 46vmin; height: 46vmin;
+          max-width: 620px; max-height: 620px;
+          transform: translate(-50%,-50%);
+          background: radial-gradient(circle at 50% 50%, rgba(255,206,130,.19) 0%, rgba(255,184,94,.10) 33%, rgba(228,158,68,.042) 56%, transparent 72%);
+          filter: blur(36px);
+          mix-blend-mode: screen;
+          opacity: .6;
+          animation: halo-breathe 9.2s ease-in-out infinite;
+        }
+        @keyframes halo-breathe {
+          0%, 100% { opacity: .50; transform: translate(-50%,-50%) scale(1); }
+          50% { opacity: .76; transform: translate(-50%,-50%) scale(1.045); }
+        }
+        @media (max-width: 600px) {
+          .kasumi { height: 25%; }
+          .kasumi .k1 { filter: blur(42px); }
+          .kasumi .k2 { filter: blur(50px); }
+          .kasumi .k3 { filter: blur(34px); }
+          .halo { width: 64vmin; filter: blur(26px); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .kasumi i, .halo { animation: none !important; }
+          .halo { opacity: .58; transform: translate(-50%,-50%) scale(1.02); }
+        }
+
+        .room-content {
+          position: relative;
+          z-index: 3;
+          text-align: center;
+          color: #f4efe5;
+          padding: 2rem 1.5rem;
+          max-width: 720px;
+        }
+        .room-welcome {
+          display: flex;
+          flex-direction: column;
+          gap: 0.9rem;
+          margin-bottom: 2.5rem;
+        }
+        .room-welcome-line {
+          margin: 0;
+          text-shadow: 0 2px 20px rgba(0,0,0,.7);
+        }
+        .room-welcome-ja {
+          font-size: clamp(1.1rem, 2.6vw, 1.5rem);
+          font-weight: 500;
+          letter-spacing: .02em;
+        }
+        .room-welcome-zh,
+        .room-welcome-en,
+        .room-welcome-vi,
+        .room-welcome-km {
+          font-size: clamp(.82rem, 1.8vw, 1rem);
+          opacity: .82;
+          font-weight: 300;
+        }
+
+        .room-actions {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 1.2rem;
+        }
+        .room-btn {
+          font-family: inherit;
+          font-size: 1rem;
+          letter-spacing: .06em;
+          padding: 0.9rem 2.2rem;
+          border-radius: 999px;
+          border: 1px solid rgba(244,239,229,.5);
+          background: rgba(20,17,12,.35);
+          color: #f4efe5;
+          cursor: pointer;
+          transition: background .25s ease, border-color .25s ease;
+        }
+        .room-btn:hover {
+          background: rgba(216,185,104,.18);
+          border-color: rgba(216,185,104,.6);
+        }
+        .room-btn-primary {
+          font-weight: 500;
+        }
+        .room-join {
+          display: flex;
+          gap: .6rem;
+          width: 100%;
+          max-width: 380px;
+        }
+        .room-join-input {
+          flex: 1;
+          font-family: inherit;
+          font-size: .9rem;
+          padding: 0.75rem 1rem;
+          border-radius: 999px;
+          border: 1px solid rgba(244,239,229,.35);
+          background: rgba(20,17,12,.4);
+          color: #f4efe5;
+        }
+        .room-join-input::placeholder {
+          color: rgba(244,239,229,.5);
+        }
+        .room-btn-secondary {
+          padding: 0.75rem 1.4rem;
+          font-size: .9rem;
+        }
+      `}</style>
+    </main>
   )
 }
