@@ -1,40 +1,23 @@
 "use client"
 
-import { useState } from "react"
-
 /**
- * 秘密の部屋 - 入室ページ
+ * 専属オープンコンシェルジュサポート室の入口ページ。
  *
- * 背景は otani-izanami-v2.kasumi.html のヒーロー演出（神社鳥居 + 霞 + ハロー）を流用。
- * ここに多言語ウェルカム文と、ルーム作成 / URL入室の導線を乗せる。
+ * 継続して使う通常チャットと、その場限りの秘密チャットを二択で案内する。
+ * 背景の神社・霞・ハロー演出は既存の世界観を引き継ぐ。
  */
-
-const WELCOME_MESSAGES = [
-  { lang: "ja", text: "あなたへの専属コンシェルジュサポートルーム・秘密の部屋へようこそ。" },
-  { lang: "zh", text: "欢迎来到专属礼宾支持室・秘密房间。" },
-  { lang: "en", text: "Welcome to your dedicated concierge support room — The Secret Room." },
-  { lang: "vi", text: "Chào mừng đến phòng hỗ trợ concierge riêng của bạn — Căn Phòng Bí Mật." },
-  { lang: "km", text: "សូមស្វាគមន៍មកកាន់បន្ទប់ជំនួយផ្ទាល់ខ្លួនរបស់អ្នក - បន្ទប់សម្ងាត់ពិសេស" },
-]
 
 function generateRoomId() {
   return Math.random().toString(36).slice(2, 8)
 }
 
 export default function Page() {
-  const [joinUrl, setJoinUrl] = useState("")
-
-  const handleCreateRoom = () => {
-    const roomId = generateRoomId()
-    window.location.href = `/secret-room/${roomId}`
+  const handleStartStandard = () => {
+    window.location.href = "/chat"
   }
 
-  const handleJoin = () => {
-    const trimmed = joinUrl.trim()
-    if (!trimmed) return
-    // URL全体でもルームIDだけでも受け付ける
-    const idMatch = trimmed.match(/secret-room\/([a-zA-Z0-9]+)/)
-    const roomId = idMatch ? idMatch[1] : trimmed
+  const handleStartSecret = () => {
+    const roomId = generateRoomId()
     window.location.href = `/secret-room/${roomId}`
   }
 
@@ -52,34 +35,16 @@ export default function Page() {
 
       <div className="room-content">
         <div className="room-welcome">
-          {WELCOME_MESSAGES.map((m) => (
-            <p key={m.lang} className={`room-welcome-line room-welcome-${m.lang}`}>
-              {m.text}
-            </p>
-          ))}
+          <h1>２人の専属オープンコンシェルジュサポート室</h1>
         </div>
 
         <div className="room-actions">
-          <button type="button" className="room-btn room-btn-primary" onClick={handleCreateRoom}>
-            部屋をつくる
+          <button type="button" className="room-btn room-btn-primary" onClick={handleStartStandard}>
+            いつものチャットを開始
           </button>
-
-          <div className="room-join">
-            <input
-              type="text"
-              inputMode="text"
-              placeholder="URLまたはコードを入力"
-              value={joinUrl}
-              onChange={(e) => setJoinUrl(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleJoin()
-              }}
-              className="room-join-input"
-            />
-            <button type="button" className="room-btn room-btn-secondary" onClick={handleJoin}>
-              入室する
-            </button>
-          </div>
+          <button type="button" className="room-btn room-btn-secondary" onClick={handleStartSecret}>
+            秘密のチャットで開始
+          </button>
         </div>
       </div>
 
@@ -206,22 +171,14 @@ export default function Page() {
           gap: 0.9rem;
           margin-bottom: 2.5rem;
         }
-        .room-welcome-line {
+        .room-welcome h1 {
           margin: 0;
+          max-width: 34rem;
           text-shadow: 0 2px 20px rgba(0,0,0,.7);
-        }
-        .room-welcome-ja {
-          font-size: clamp(1.1rem, 2.6vw, 1.5rem);
+          font-size: clamp(1.25rem, 3.8vw, 2rem);
           font-weight: 500;
-          letter-spacing: .02em;
-        }
-        .room-welcome-zh,
-        .room-welcome-en,
-        .room-welcome-vi,
-        .room-welcome-km {
-          font-size: clamp(.82rem, 1.8vw, 1rem);
-          opacity: .82;
-          font-weight: 300;
+          line-height: 1.6;
+          letter-spacing: .04em;
         }
 
         .room-actions {
@@ -248,28 +205,11 @@ export default function Page() {
         }
         .room-btn-primary {
           font-weight: 500;
-        }
-        .room-join {
-          display: flex;
-          gap: .6rem;
-          width: 100%;
-          max-width: 380px;
-        }
-        .room-join-input {
-          flex: 1;
-          font-family: inherit;
-          font-size: .9rem;
-          padding: 0.75rem 1rem;
-          border-radius: 999px;
-          border: 1px solid rgba(244,239,229,.35);
-          background: rgba(20,17,12,.4);
-          color: #f4efe5;
-        }
-        .room-join-input::placeholder {
-          color: rgba(244,239,229,.5);
+          background: rgba(216,185,104,.18);
+          border-color: rgba(216,185,104,.62);
         }
         .room-btn-secondary {
-          padding: 0.75rem 1.4rem;
+          padding: 0.75rem 1.7rem;
           font-size: .9rem;
         }
       `}</style>
