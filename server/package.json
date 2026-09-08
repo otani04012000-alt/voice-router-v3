@@ -1,0 +1,24 @@
+{
+  "name": "secret-room-ws-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Railway常駐WebSocketサーバー。秘密の部屋のroom同期・presence・typing・message relayのみを担う。人格・音声・AI返信・翻訳APIは扱わない。",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/ws": "^8.5.12",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}
