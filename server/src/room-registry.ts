@@ -13,13 +13,15 @@ export function joinRoom(
   roomId: string,
   member: RoomMember,
   socket: WebSocket,
-): RoomMember[] {
+): RoomMember[] | null {
   let room = rooms.get(roomId)
 
   if (!room) {
     room = new Map()
     rooms.set(roomId, room)
   }
+
+  if (room.has(member.id)) return null
 
   const existingMembers = [...room.values()].map((conn) => conn.member)
   room.set(member.id, { socket, member })
