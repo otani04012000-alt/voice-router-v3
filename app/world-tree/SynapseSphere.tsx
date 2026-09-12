@@ -1,15 +1,15 @@
 'use client'
 
-// @ts-nocheck
 /* eslint-disable @typescript-eslint/ban-ts-comment, react-hooks/exhaustive-deps */
 import React, { useRef, useMemo, useState } from 'react'
+import type { Mesh } from 'three'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, Stars, Html, Line } from '@react-three/drei'
 
 // ─── 中心のコア球体：脈動しながら回転する ──────────────
 function SynapseCore({ nodeCount }: { nodeCount: number }) {
-  const ref = useRef(null)
-  const glow = useRef(null)
+  const ref = useRef<Mesh>(null)
+  const glow = useRef<Mesh>(null)
   useFrame((state, delta) => {
     if (ref.current) ref.current.rotation.y += delta * 0.15
     if (glow.current) {
@@ -56,7 +56,7 @@ function FileNode({
   index: number
   onClick?: () => void
 }) {
-  const ref = useRef(null)
+  const ref = useRef<Mesh>(null)
   const [hover, setHover] = useState(false)
   useFrame((state) => {
     if (!ref.current) return
@@ -134,7 +134,7 @@ function SynapseLink({
   color: string
   strength: number
 }) {
-  const ref = useRef(null)
+  const ref = useRef<React.ComponentRef<typeof Line>>(null)
   useFrame((state) => {
     if (!ref.current || !ref.current.material) return
     const t = state.clock.elapsedTime

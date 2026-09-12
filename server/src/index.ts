@@ -9,18 +9,16 @@ import {
   leaveRoom,
   totalConnectionCount,
 } from "./room-registry.js"
-import type { ClientEvent, RoomMember, RoomMessage, ServerEvent } from "./types.js"
+import type { ClientEvent, RoomMember, RoomMessage, ServerEvent, TranslationPayload } from "./types.js"
 
 const PORT = Number(process.env.PORT ?? 3001)
 
-// 秘密の部屋の初回段階では、人格・音声・AI返信・翻訳APIを扱わない。
-// room:join / room:message / room:typing の中継と、
-// room:ready / room:message / room:presence / room:typing / room:error の配信だけを行う。
+// 原文と検証済みの翻訳ペイロードを中継。履歴は永続化しない。
 
 const MAX_ROOM_ID_LENGTH = 128
 const MAX_MEMBER_NAME_LENGTH = 64
 const MAX_MESSAGE_BODY_LENGTH = 2000
-const MAX_PAYLOAD_BYTES = 8 * 1024
+const MAX_PAYLOAD_BYTES = 32 * 1024
 
 function sendEvent(socket: WebSocket, event: ServerEvent) {
   if (socket.readyState === socket.OPEN) {
@@ -38,6 +36,16 @@ function isNonEmptyString(value: unknown, maxLength: number): value is string {
     value.trim().length > 0 &&
     value.length <= maxLength
   )
+}
+
+function parseTranslation(value: unknown): TranslationPayload | undefined {
+  if (!value || typeof value !== "object") return undefined
+  const t = value as TranslationPayload
+  const languages = ["ja", "vi", "km", "en"]
+  if (!languages.includes(t.source) || !languages.includes(t.target) ||
+      !isNonEmptyString(t.original, 600) || !isNonEmptyString(t.translated, 5000) ||
+      !["openrouter", "mymemory", "identity"].includes(t.provider) || typeof t.toneApplied !== "boolean") return undefined
+  return { source: t.source, target: t.target, original: t.original, translated: t.translated, provider: t.provider, toneApplied: t.toneApplied }
 }
 
 function parseClientEvent(raw: string): ClientEvent | null {
@@ -77,7 +85,8 @@ function parseClientEvent(raw: string): ClientEvent | null {
       isNonEmptyString(event.roomId, MAX_ROOM_ID_LENGTH) &&
       isNonEmptyString(event.clientMessageId, MAX_MEMBER_NAME_LENGTH) &&
       isNonEmptyString(event.body, MAX_MESSAGE_BODY_LENGTH) &&
-      typeof event.createdAt === "number"
+      typeof event.createdAt === "number" && Number.isFinite(event.createdAt) &&
+      (event.translation === undefined || Boolean(parseTranslation(event.translation)) && (event.translation as TranslationPayload).original === event.body)
     ) {
       return {
         type: "room:message",
@@ -85,6 +94,7 @@ function parseClientEvent(raw: string): ClientEvent | null {
         clientMessageId: event.clientMessageId,
         body: event.body,
         createdAt: event.createdAt,
+        translation: parseTranslation(event.translation),
       }
     }
 
@@ -126,10 +136,28 @@ const httpServer = createServer((req, res) => {
   res.end("not found")
 })
 
-const wss = new WebSocketServer({ server: httpServer })
+const wss = new WebSocketServer({ server: httpServer, maxPayload: MAX_PAYLOAD_BYTES })
 
+const alive = new WeakSet<WebSocket>()
+const seen = new WeakMap<WebSocket, Set<string>>()
+const heartbeat = setInterval(() => {
+  for (const socket of wss.clients) {
+    if (!alive.has(socket)) { socket.terminate(); continue }
+    alive.delete(socket); socket.ping()
+  }
+}, 30000)
+heartbeat.unref()
+wss.on("close", () => clearInterval(heartbeat))
 wss.on("connection", (socket) => {
+  alive.add(socket)
+  socket.on("pong", () => alive.add(socket))
+  seen.set(socket, new Set())
+  let count = 0, windowStart = Date.now()
+  const joinTimeout = setTimeout(() => { if (!findRoomIdForSocket(socket)) socket.close(1008, "join required") }, 15000)
+  socket.on("close", () => clearTimeout(joinTimeout))
   socket.on("message", (raw) => {
+    if (Date.now() - windowStart > 10000) { windowStart = Date.now(); count = 0 }
+    if (++count > 150) { socket.close(1008, "rate limit"); return }
     const text = raw.toString()
 
     if (Buffer.byteLength(text, "utf8") > MAX_PAYLOAD_BYTES) {
@@ -150,7 +178,7 @@ wss.on("connection", (socket) => {
     }
 
     if (event.type === "room:message") {
-      handleMessage(socket, event.roomId, event.clientMessageId, event.body, event.createdAt)
+      handleMessage(socket, event.roomId, event.clientMessageId, event.body, event.translation)
       return
     }
 
@@ -183,6 +211,7 @@ function handleJoin(
 
   const member: RoomMember = { id: memberId, name: memberName }
   const existingMembers = joinRoom(roomId, member, socket)
+  if (!existingMembers) { sendError(socket, "参加者IDが重複しています。ページを開き直してください。"); socket.close(1008); return }
 
   sendEvent(socket, {
     type: "room:ready",
@@ -209,7 +238,7 @@ function handleMessage(
   roomId: string,
   clientMessageId: string,
   body: string,
-  createdAt: number,
+  translation?: TranslationPayload,
 ) {
   const member = findMemberForSocket(roomId, socket)
 
@@ -218,20 +247,27 @@ function handleMessage(
     return
   }
 
+  const messageIds = seen.get(socket)!
+  if (messageIds.has(clientMessageId)) {
+    sendEvent(socket, { type: "room:message", message: { id: clientMessageId, roomId, senderId: member.id, senderName: member.name, body, createdAt: Date.now(), kind: "member", translation } })
+    return
+  }
+  messageIds.add(clientMessageId)
+  if (messageIds.size > 1000) messageIds.delete(messageIds.values().next().value!)
   const message: RoomMessage = {
     id: clientMessageId,
     roomId,
     senderId: member.id,
     senderName: member.name,
     body,
-    createdAt,
+    createdAt: Date.now(),
     kind: "member",
+    translation,
   }
 
   broadcastToRoom(
     roomId,
     { type: "room:message", message } satisfies ServerEvent,
-    socket,
   )
 }
 

@@ -245,3 +245,12 @@
     transparent
   );
 }
+
+/* Self-hosted font packages make production builds independent of Google Fonts. */
+.font-variables {
+  --font-noto-sans-jp: 'Noto Sans JP Variable';
+  --font-noto-serif-jp: 'Noto Serif JP Variable';
+  --font-geist-sans: 'Geist Variable';
+  --font-geist-mono: 'Geist Mono Variable';
+}
+[lang="km"] { font-family: 'Noto Sans Khmer Variable', sans-serif; }

@@ -1,3 +1,12 @@
+export type TranslationPayload = {
+  original: string
+  translated: string
+  source: "ja" | "vi" | "km" | "en"
+  target: "ja" | "vi" | "km" | "en"
+  provider: "openrouter" | "mymemory" | "identity"
+  toneApplied: boolean
+}
+
 // フロント側 app/secret-room/[roomId]/types.ts と同一の通信契約。
 // 人格・音声・AI・翻訳はこのRailwayサーバーの責務に含めない。
 
@@ -11,6 +20,7 @@ export type RoomMessage = {
   body: string
   createdAt: number
   kind: RoomMessageKind
+  translation?: TranslationPayload
 }
 
 export type RoomMember = {
@@ -29,6 +39,7 @@ export type ClientEvent =
       type: "room:message"
       roomId: string
       clientMessageId: string
+      translation?: TranslationPayload
       body: string
       createdAt: number
     }

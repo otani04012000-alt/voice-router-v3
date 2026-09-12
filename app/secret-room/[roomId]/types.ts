@@ -1,3 +1,12 @@
+export type TranslationPayload = {
+  original: string
+  translated: string
+  source: "ja" | "vi" | "km" | "en"
+  target: "ja" | "vi" | "km" | "en"
+  provider: "openrouter" | "mymemory" | "identity"
+  toneApplied: boolean
+}
+
 export type ConnectionState = "connecting" | "connected" | "disconnected" | "error"
 
 export type RoomMessageKind = "member" | "system"
@@ -10,6 +19,7 @@ export type RoomMessage = {
   body: string
   createdAt: number
   kind: RoomMessageKind
+  translation?: TranslationPayload
 }
 
 export type RoomMember = {
@@ -28,6 +38,7 @@ export type ClientEvent =
       type: "room:message"
       roomId: string
       clientMessageId: string
+      translation?: TranslationPayload
       body: string
       createdAt: number
     }
