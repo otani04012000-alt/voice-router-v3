@@ -111,6 +111,8 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
   >("loading");
   const [keepHistory, setKeepHistory] = useState(false);
   const [autoSpeak, setAutoSpeak] = useState(false);
+  const [conversationMode, setConversationMode] = useState(false);
+  const [voiceSubmission, setVoiceSubmission] = useState(0);
   const [panel, setPanel] = useState<"saved" | "settings" | null>(null);
   const [present, setPresent] = useState<Turn | null>(null);
   const [flipped, setFlipped] = useState(false);
@@ -126,12 +128,15 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
   const textarea = useRef<HTMLTextAreaElement>(null);
   const end = useRef<HTMLDivElement>(null);
   const lock = useRef(false);
+  const conversationModeRef = useRef(false);
   const source = speaker === "you" ? myLanguage : otherLanguage;
   const target = speaker === "you" ? otherLanguage : myLanguage;
   const voice = useVoice(
     useCallback((value: string) => {
       setResult(null);
       setText((t) => (t ? `${t} ${value}` : value).slice(0, MAX_TEXT));
+      if (conversationModeRef.current)
+        setVoiceSubmission((submission) => submission + 1);
     }, []),
     setNotice,
   );
@@ -297,6 +302,23 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
       lock.current = false;
       setBusy(false);
     }
+  };
+  useEffect(() => {
+    if (!voiceSubmission) return;
+    void appendTranslation();
+    // A new final speech-recognition result is the intentional trigger.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voiceSubmission]);
+  const toggleConversationMode = () => {
+    const next = !conversationMode;
+    conversationModeRef.current = next;
+    setConversationMode(next);
+    setAutoSpeak(next);
+    setNotice(
+      next
+        ? "会話モードを開始しました。話し終えると、自動で翻訳して読み上げます。"
+        : "会話モードを終了しました。",
+    );
   };
   const sendResult = () => {
     if (!result || sentIds.includes(result.id)) return;
@@ -594,7 +616,9 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
             </div>
           )}
           <div className="workbench">
-            <section className="input-card">
+            <section
+              className={`input-card ${voice.listening ? "is-listening" : ""}`}
+            >
               <div className="card-heading">
                 <span className="number-tag">01</span>
                 <h2>伝えたいこと</h2>
@@ -624,6 +648,31 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                   </button>
                 </div>
               )}
+              <button
+                type="button"
+                className={`conversation-mode-toggle ${conversationMode ? "active" : ""}`}
+                aria-pressed={conversationMode}
+                onClick={toggleConversationMode}
+                disabled={busy || voice.listening}
+              >
+                <span className="mode-signal" aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
+                  <i />
+                </span>
+                <span className="mode-copy">
+                  <strong>会話モード</strong>
+                  <small>
+                    {conversationMode
+                      ? "声を聞いたら、自動翻訳して読み上げます"
+                      : "声で入力 → 翻訳 → 読み上げをひとつに"}
+                  </small>
+                </span>
+                <span className="mode-switch" aria-hidden="true">
+                  <i />
+                </span>
+              </button>
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -712,7 +761,16 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                     disabled={busy || !voice.supported}
                     onClick={() => voice.start(source)}
                   >
-                    {voice.listening ? <Square size={17} /> : <Mic size={18} />}
+                    {voice.listening ? (
+                      <span className="live-voice-bars" aria-hidden="true">
+                        <i />
+                        <i />
+                        <i />
+                        <i />
+                      </span>
+                    ) : (
+                      <Mic size={18} />
+                    )}
                     {voice.listening ? "音声を停止" : "声で入力"}
                   </button>
                   <button
