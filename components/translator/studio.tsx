@@ -113,6 +113,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
   const [autoSpeak, setAutoSpeak] = useState(false);
   const [conversationMode, setConversationMode] = useState(false);
   const [voiceSubmission, setVoiceSubmission] = useState(0);
+  const [swapping, setSwapping] = useState(false);
   const [panel, setPanel] = useState<"saved" | "settings" | null>(null);
   const [present, setPresent] = useState<Turn | null>(null);
   const [flipped, setFlipped] = useState(false);
@@ -123,6 +124,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
   const backAbort = useRef<AbortController | null>(null);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const localTypingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const swapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   const presentDialog = useRef<HTMLDialogElement>(null);
   const textarea = useRef<HTMLTextAreaElement>(null);
@@ -175,6 +177,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
       backAbort.current?.abort();
       if (typingTimer.current) clearTimeout(typingTimer.current);
       if (localTypingTimer.current) clearTimeout(localTypingTimer.current);
+      if (swapTimer.current) clearTimeout(swapTimer.current);
     };
   }, [remote]);
   useEffect(() => {
@@ -549,7 +552,10 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
               <span className="orbit-star">✧</span>
             </div>
           </section>
-          <section className="language-bar" aria-label="会話の言語">
+          <section
+            className={`language-bar ${swapping ? "swapping" : ""}`}
+            aria-label="会話の言語"
+          >
             <label>
               <span>あなたのことば</span>
               <select
@@ -568,12 +574,15 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
               </select>
             </label>
             <button
-              className="swap-button"
+              className={`swap-button ${swapping ? "swapping" : ""}`}
               aria-label="言語を入れ替える"
               disabled={busy || voice.listening}
               onClick={() => {
+                if (swapTimer.current) clearTimeout(swapTimer.current);
+                setSwapping(true);
                 changeLanguage("my", otherLanguage);
                 setText("");
+                swapTimer.current = setTimeout(() => setSwapping(false), 620);
               }}
             >
               <ArrowDownUp size={18} />
@@ -811,6 +820,18 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
               </div>
               {result ? (
                 <>
+                  <div
+                    className="delivery-sparks"
+                    key={result.id}
+                    aria-hidden="true"
+                  >
+                    <i />
+                    <i />
+                    <i />
+                    <i />
+                    <i />
+                    <i />
+                  </div>
                   <div className="translation-content">
                     <p lang={result.target} className="translated-text">
                       {result.translated}
