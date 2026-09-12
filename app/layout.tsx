@@ -7,6 +7,7 @@ import '@fontsource-variable/noto-serif-jp'
 import '@fontsource-variable/noto-sans-khmer'
 import './globals.css'
 import '@/components/translator/secretary.css'
+import SecretaryPresence from '@/components/translator/secretary-presence'
 
 export const metadata: Metadata = {
   title: '翻訳王 | ことばの向こうに、人がいる。',
@@ -51,6 +52,7 @@ export default function RootLayout({
     >
       <body className="font-sans antialiased">
         {children}
+        <SecretaryPresence />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
