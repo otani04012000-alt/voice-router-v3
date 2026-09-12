@@ -6,6 +6,7 @@ import '@fontsource-variable/noto-sans-jp'
 import '@fontsource-variable/noto-serif-jp'
 import '@fontsource-variable/noto-sans-khmer'
 import './globals.css'
+import '@/components/translator/secretary.css'
 
 export const metadata: Metadata = {
   title: '翻訳王 | ことばの向こうに、人がいる。',
