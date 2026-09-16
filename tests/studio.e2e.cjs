@@ -57,6 +57,7 @@ const ws = spawn(process.execPath, ["server/dist/index.js"], {
     });
     const context = await browser.newContext({
       viewport: { width: 1440, height: 1120 },
+      permissions: ["notifications"],
     });
     const errors = [];
     context.setDefaultTimeout(12000);
@@ -94,6 +95,8 @@ const ws = spawn(process.execPath, ["server/dist/index.js"], {
               ? "Xin chào. Rất vui được gặp bạn."
               : data.target === "km"
                 ? "សួស្តី"
+                : data.target === "zh"
+                  ? "你好。很高兴认识你。"
                 : "こんにちは。会えてうれしいです。",
           source: data.source,
           target: data.target,
@@ -150,6 +153,11 @@ const ws = spawn(process.execPath, ["server/dist/index.js"], {
     await page.getByLabel("フレーズ帳", { exact: true }).click();
     await page.locator(".saved-phrase").waitFor();
     await page.getByLabel("閉じる", { exact: true }).click();
+    await page.getByLabel("相手の言語").selectOption("zh");
+    await page.getByLabel("翻訳する文章").fill("こんにちは");
+    await page.getByRole("button", { name: "翻訳する", exact: true }).click();
+    await page.locator(".translated-text").getByText(/你好/).waitFor();
+    await page.getByLabel("相手の言語").selectOption("vi");
     fail = true;
     await page.getByLabel("翻訳する文章").fill("失敗しても消えない文章");
     await page.getByRole("button", { name: "翻訳する", exact: true }).click();
@@ -170,19 +178,25 @@ const ws = spawn(process.execPath, ["server/dist/index.js"], {
     );
     await page.screenshot({ path: "/tmp/studio-mobile.png", fullPage: true });
     console.log(
-      "PASS: desktop/mobile layout, translation, reverse check, saved phrases, presentation/rotation/reply, opt-in history, error retention",
+      "PASS: desktop/mobile layout, Japanese/Chinese UI translation, reverse check, saved phrases, presentation/rotation/reply, opt-in history, error retention",
     );
     await page.setViewportSize({ width: 1440, height: 1120 });
     await page.goto(
       "http://127.0.0.1:3320/secret-room/qa-session?from=ja&to=vi",
     );
+    await page.getByLabel("あなたの表示名").fill("大谷");
+    await page.getByRole("button", { name: "この名前で入室" }).click();
     const guest = await context.newPage();
     guest.on("pageerror", (e) => errors.push(e.message));
     await guest.goto(
       "http://127.0.0.1:3320/secret-room/qa-session?from=vi&to=ja",
     );
+    await guest.getByLabel("あなたの表示名").fill("リン");
+    await guest.getByRole("button", { name: "この名前で入室" }).click();
     await page.getByText("2人の部屋", { exact: true }).waitFor();
     await guest.getByText("2人の部屋", { exact: true }).waitFor();
+    await page.locator(".room-member").filter({ hasText: "大谷" }).waitFor();
+    await page.locator(".room-member").filter({ hasText: "リン" }).waitFor();
     await page
       .getByLabel("翻訳する文章")
       .fill("こんにちは。会えてうれしいです。");
@@ -204,13 +218,17 @@ const ws = spawn(process.execPath, ["server/dist/index.js"], {
       .getByRole("button", { name: "Gửi · 送る", exact: true })
       .click();
     await page.locator(".conversation-turn.partner").waitFor();
+    await page.getByRole("button", { name: "新着 1件を見る" }).waitFor();
+    await page.locator(".secretary-action").getByText("新着を見る", { exact: true }).waitFor();
+    await page.locator(".secretary-action").click();
+    assert.equal(await page.locator(".room-new-message").count(), 0);
     await page.screenshot({ path: "/tmp/studio-room.png", fullPage: true });
     assert.equal(await guest.getByLabel("あなたの言語").inputValue(), "vi");
     await guest.reload();
     await guest.getByText("2人の部屋", { exact: true }).waitFor();
     assert.equal(await guest.locator(".conversation-turn").count(), 0);
     console.log(
-      "PASS: two browser peers, Japanese/Vietnamese reply, real WebSocket relay/ack, guest-language setup, ephemeral room history",
+      "PASS: named participants, new-message notification/assistant action, Japanese/Vietnamese reply, real WebSocket relay/ack, guest-language setup, ephemeral room history",
     );
     assert.deepEqual(errors, []);
     console.log("PASS: no browser runtime exceptions");

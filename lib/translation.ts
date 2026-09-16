@@ -12,6 +12,12 @@ export const LANGUAGES = {
     locale: "km-KH",
     short: "柬",
   },
+  zh: {
+    label: "中国語",
+    native: "中文",
+    locale: "zh-CN",
+    short: "中",
+  },
   en: { label: "英語", native: "English", locale: "en-US", short: "英" },
 } as const;
 export type Language = keyof typeof LANGUAGES;

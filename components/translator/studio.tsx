@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowDownUp,
   ArrowRight,
+  Bell,
   Bookmark,
   Check,
   ChevronRight,
@@ -23,6 +24,7 @@ import {
   Sparkles,
   Square,
   Trash2,
+  UserRound,
   Users,
   Volume2,
   X,
@@ -46,6 +48,7 @@ import "./studio.css";
 
 const SAVED_KEY = "honyaku.saved.v1";
 const HISTORY_KEY = "honyaku.history.v1";
+const ROOM_NAME_KEY = "honyaku.room.name.v1";
 const phrases = [
   {
     category: "出会い",
@@ -118,8 +121,14 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
   const [present, setPresent] = useState<Turn | null>(null);
   const [flipped, setFlipped] = useState(false);
   const [memberId, setMemberId] = useState("");
+  const [memberName, setMemberName] = useState("");
+  const [memberNameDraft, setMemberNameDraft] = useState("");
   const [typing, setTyping] = useState(false);
+  const [typingName, setTypingName] = useState("");
   const [sentIds, setSentIds] = useState<string[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationPermission, setNotificationPermission] =
+    useState<NotificationPermission>("default");
   const abort = useRef<AbortController | null>(null);
   const backAbort = useRef<AbortController | null>(null);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -147,6 +156,15 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
     setMemberId(`member-${crypto.randomUUID()}`);
     setSaved(readTurns(SAVED_KEY));
     try {
+      if ("Notification" in window)
+        setNotificationPermission(Notification.permission);
+      if (remote) {
+        const rememberedName = sessionStorage.getItem(ROOM_NAME_KEY)?.trim();
+        if (rememberedName) {
+          setMemberName(rememberedName);
+          setMemberNameDraft(rememberedName);
+        }
+      }
       if (!remote && localStorage.getItem("honyaku.remember") === "yes") {
         setKeepHistory(true);
         setTurns(readTurns(HISTORY_KEY));
@@ -200,6 +218,14 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
     if (turns.length)
       end.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [turns.length]);
+  useEffect(() => {
+    document.title = unreadCount
+      ? `(${unreadCount}) 翻訳王 | 新着メッセージ`
+      : "翻訳王 | ことばを越えて。";
+    return () => {
+      document.title = "翻訳王 | ことばを越えて。";
+    };
+  }, [unreadCount]);
 
   const addTurn = useCallback(
     (turn: Turn) =>
@@ -220,6 +246,19 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
         return;
       }
       setTyping(false);
+      setTypingName("");
+      setUnreadCount((count) => count + 1);
+      setNotice(`${message.senderName}さんから新着メッセージが届きました。`);
+      navigator.vibrate?.(120);
+      if (
+        "Notification" in window &&
+        Notification.permission === "granted"
+      ) {
+        new Notification("翻訳王 | 新着メッセージ", {
+          body: `${message.senderName}さんからメッセージが届きました。`,
+          tag: `honyaku-${message.id}`,
+        });
+      }
       if (message.translation && isTranslation(message.translation)) {
         const turn: Turn = {
           ...message.translation,
@@ -255,16 +294,23 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
     [memberId, addTurn, autoSpeak, myLanguage, otherLanguage, voice.speak],
   );
   const socket = useRoomSocket({
-    enabled: remote && Boolean(memberId),
+    enabled: remote && Boolean(memberId) && Boolean(memberName),
     roomId: roomId || "",
     memberId,
-    memberName: LANGUAGES[myLanguage].native,
+    memberName,
     onMessage,
     onPresence: (e) => {
-      if (e.action === "left") setTyping(false);
+      if (e.action === "left") {
+        setTyping(false);
+        setTypingName("");
+      }
+      setNotice(
+        `${e.member.name}さんが${e.action === "joined" ? "入室" : "退室"}しました。`,
+      );
     },
     onTyping: (e) => {
       setTyping(e.active);
+      setTypingName(e.active ? e.memberName : "");
       if (typingTimer.current) clearTimeout(typingTimer.current);
       if (e.active)
         typingTimer.current = setTimeout(() => setTyping(false), 2500);
@@ -465,7 +511,141 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
         t.original === result.original &&
         t.source === result.source &&
         t.target === result.target,
+      );
+
+  const enterRoom = () => {
+    const name = memberNameDraft.trim().replace(/\s+/g, " ").slice(0, 40);
+    if (!name) {
+      setNotice("入室する名前を入力してください。");
+      return;
+    }
+    sessionStorage.setItem(ROOM_NAME_KEY, name);
+    setMemberName(name);
+    setMemberNameDraft(name);
+    setNotice(`${name}さんとして入室します。`);
+  };
+  const requestNotifications = async () => {
+    if (!("Notification" in window)) {
+      setNotice("このブラウザは端末通知に対応していません。画面内では新着を表示します。");
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    setNotificationPermission(permission);
+    setNotice(
+      permission === "granted"
+        ? "新着の端末通知をオンにしました。"
+        : "端末通知はオフです。新着は画面内で確認できます。",
     );
+  };
+  const markMessagesRead = () => {
+    setUnreadCount(0);
+    end.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  };
+  useEffect(() => {
+    const handleAction = (event: Event) => {
+      const action = (event as CustomEvent<{ action?: string }>).detail?.action;
+      if (action === "read") markMessagesRead();
+      else if (action === "notifications") void requestNotifications();
+      else if (action === "join")
+        document.getElementById("room-member-name")?.focus();
+      else {
+        textarea.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        textarea.current?.focus();
+      }
+    };
+    window.addEventListener("honyaku:secretary-action", handleAction);
+    return () =>
+      window.removeEventListener("honyaku:secretary-action", handleAction);
+    // The listener only calls state setters and stable DOM refs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    let detail: {
+      message: string;
+      label: string;
+      action: "focus" | "join" | "read" | "notifications";
+      badge?: number;
+      tone: "idle" | "active" | "alert" | "error";
+    };
+    if (remote && !memberName)
+      detail = {
+        message: "表示名を入力すると、安全に入室できます。",
+        label: "名前を入力",
+        action: "join",
+        tone: "idle",
+      };
+    else if (unreadCount)
+      detail = {
+        message: `${unreadCount}件の新着メッセージがあります。`,
+        label: "新着を見る",
+        action: "read",
+        badge: unreadCount,
+        tone: "alert",
+      };
+    else if (voice.listening)
+      detail = {
+        message: "声を聞いています。話し終えたら停止してください。",
+        label: "入力を確認",
+        action: "focus",
+        tone: "active",
+      };
+    else if (busy)
+      detail = {
+        message: "ことばを翻訳しています。",
+        label: "入力を確認",
+        action: "focus",
+        tone: "active",
+      };
+    else if (remote && socket.connectionState === "error")
+      detail = {
+        message: "部屋への接続を確認できません。再接続しています。",
+        label: "入力を確認",
+        action: "focus",
+        tone: "error",
+      };
+    else if (typing)
+      detail = {
+        message: `${typingName || "相手"}さんが入力しています。`,
+        label: "会話を見る",
+        action: "read",
+        tone: "active",
+      };
+    else if (
+      remote &&
+      socket.connectionState === "connected" &&
+      notificationPermission !== "granted"
+    )
+      detail = {
+        message: `${socket.members.map((member) => member.name).join("、")}が入室中です。`,
+        label: "新着通知をオン",
+        action: "notifications",
+        tone: "idle",
+      };
+    else
+      detail = {
+        message:
+          remote && socket.connectionState === "connected"
+            ? `${socket.members.map((member) => member.name).join("、")}が入室中です。`
+            : "入力の準備ができています。",
+        label: "入力へ",
+        action: "focus",
+        tone: "idle",
+      };
+    window.dispatchEvent(
+      new CustomEvent("honyaku:secretary-status", { detail }),
+    );
+  }, [
+    busy,
+    memberName,
+    notificationPermission,
+    remote,
+    socket.connectionState,
+    socket.members,
+    typing,
+    typingName,
+    unreadCount,
+    voice.listening,
+  ]);
 
   return (
     <main className="honyaku">
@@ -525,7 +705,84 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
             </button>
           </div>
         </header>
+        {remote && !memberName && (
+          <div className="room-entry-layer">
+            <form
+              className="room-entry-card"
+              onSubmit={(event) => {
+                event.preventDefault();
+                enterRoom();
+              }}
+            >
+              <span className="room-entry-icon" aria-hidden="true">
+                <UserRound size={24} />
+              </span>
+              <p className="eyebrow"><span />秘密の部屋へ入る</p>
+              <h1>誰がいるか、名前でわかる部屋です。</h1>
+              <p>相手の画面にも表示する名前を入力してください。部屋の履歴と同じく、サーバーには保存しません。</p>
+              <label htmlFor="room-member-name">あなたの表示名</label>
+              <input
+                id="room-member-name"
+                name="room-member-name"
+                autoComplete="nickname"
+                autoFocus
+                maxLength={40}
+                value={memberNameDraft}
+                onChange={(event) => setMemberNameDraft(event.target.value)}
+                placeholder="例：大谷"
+              />
+              <button type="submit" disabled={!memberNameDraft.trim()}>
+                <Users size={17} />
+                この名前で入室
+              </button>
+            </form>
+          </div>
+        )}
         <div className="studio-content">
+          {remote && memberName && (
+            <section className="room-members" aria-label="入室中の参加者">
+              <div className="room-members-heading">
+                <span><Users size={15} />入室中</span>
+                <small>名前を確認できる人だけが会話に参加しています</small>
+              </div>
+              <div className="room-member-list">
+                {unreadCount > 0 && (
+                  <button
+                    type="button"
+                    className="room-new-message"
+                    onClick={markMessagesRead}
+                  >
+                    <Bell size={13} />新着 {unreadCount}件を見る
+                  </button>
+                )}
+                {socket.members.map((member) => (
+                  <span className="room-member" key={member.id}>
+                    <i aria-hidden="true" />
+                    {member.name}
+                    {member.id === memberId && <small>あなた</small>}
+                  </span>
+                ))}
+                {socket.connectionState !== "connected" && (
+                  <span className="room-member pending">接続を確認中</span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    sessionStorage.removeItem(ROOM_NAME_KEY);
+                    setMemberName("");
+                    setMemberNameDraft("");
+                  }}
+                >
+                  名前を変更
+                </button>
+                {notificationPermission !== "granted" && (
+                  <button type="button" onClick={requestNotifications}>
+                    <Bell size={12} />新着通知をオン
+                  </button>
+                )}
+              </div>
+            </section>
+          )}
           <section className="intro">
             <div>
               <p className="eyebrow">
@@ -549,6 +806,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
               <span className="orbit-word japanese">あ</span>
               <span className="orbit-word viet">à</span>
               <span className="orbit-word khmer">ក</span>
+              <span className="orbit-word chinese">中</span>
               <span className="orbit-star">✧</span>
             </div>
           </section>
@@ -705,6 +963,8 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                         ? "Hãy nói bằng ngôn ngữ của bạn…"
                         : source === "km"
                           ? "សូមសរសេរនៅទីនេះ…"
+                          : source === "zh"
+                            ? "请用你自己的语言说…"
                           : "Say it in your own words…"
                   }
                   onChange={(e) => {
@@ -798,6 +1058,8 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                         ? "Dịch · 翻訳"
                         : myLanguage === "km"
                           ? "បកប្រែ · 翻訳"
+                          : myLanguage === "zh"
+                            ? "翻译 · 翻訳"
                           : myLanguage === "en"
                             ? "Translate"
                             : "翻訳する"}
@@ -1048,7 +1310,9 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                   </article>
                 ))}
                 {typing && (
-                  <p className="typing-indicator">相手が入力しています…</p>
+                  <p className="typing-indicator">
+                    {typingName || "相手"}さんが入力しています…
+                  </p>
                 )}
                 <div ref={end} />
               </div>
@@ -1165,6 +1429,23 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                 onChange={(e) => setAutoSpeak(e.target.checked)}
               />
             </label>
+            {remote && (
+              <div className="setting-row">
+                <span>
+                  新着を端末に通知する
+                  <small>相手が送信を完了したとき、画面外でも名前つきで知らせます。</small>
+                </span>
+                <button
+                  type="button"
+                  className="notification-setting"
+                  onClick={requestNotifications}
+                  disabled={notificationPermission === "granted"}
+                >
+                  <Bell size={15} />
+                  {notificationPermission === "granted" ? "通知オン" : "オンにする"}
+                </button>
+              </div>
+            )}
             {!remote && (
               <label className="setting-row">
                 <span>

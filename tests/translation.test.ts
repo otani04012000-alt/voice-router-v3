@@ -14,6 +14,19 @@ test("UTF-8 chunks roundtrip Japanese, Khmer and emoji within upstream byte limi
   assert.equal(chunks.join(""), text);
   assert.ok(chunks.every((c) => new TextEncoder().encode(c).length <= 480));
   assert.equal(isLanguage("__proto__"), false);
+  assert.equal(isLanguage("zh"), true);
+});
+
+test("Chinese is accepted by the translation contract", async () => {
+  const response = await POST(
+    request({ text: "你好", source: "zh", target: "zh" }),
+  );
+  assert.equal(response.status, 200);
+  const data = await response.json();
+  assert.equal(data.original, "你好");
+  assert.equal(data.translated, "你好");
+  assert.equal(data.source, "zh");
+  assert.equal(data.target, "zh");
 });
 test("reject invalid request types, prototype names, excessive input and cross origin", async () => {
   for (const body of [

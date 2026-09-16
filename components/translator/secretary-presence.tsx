@@ -1,58 +1,97 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import "./secretary-presence.css";
 
-const MESSAGES = [
-  "お任せください。",
-  "そのまま話して大丈夫です。",
-  "意味を変えずに、自然に届けます。",
-  "ことばの向こうまで、整えます。",
-];
+type SecretaryDetail = {
+  message: string;
+  label: string;
+  action: "focus" | "join" | "read" | "notifications";
+  badge?: number;
+  tone?: "idle" | "active" | "alert" | "error";
+};
+
+const INITIAL: SecretaryDetail = {
+  message: "入力の準備ができています。",
+  label: "入力へ",
+  action: "focus",
+  tone: "idle",
+};
 
 export default function SecretaryPresence() {
   const pathname = usePathname();
   const visible = pathname === "/" || pathname.startsWith("/secret-room/");
-  const [index, setIndex] = useState(0);
   const [open, setOpen] = useState(true);
+  const [status, setStatus] = useState<SecretaryDetail>(INITIAL);
 
   useEffect(() => {
     if (!visible) return;
-    const timer = window.setInterval(
-      () => setIndex((current) => (current + 1) % MESSAGES.length),
-      5200,
-    );
-    return () => window.clearInterval(timer);
+    if (window.matchMedia("(max-width: 820px)").matches) setOpen(false);
+    const receive = (event: Event) => {
+      const detail = (event as CustomEvent<SecretaryDetail>).detail;
+      if (detail?.message && detail?.action) setStatus(detail);
+    };
+    window.addEventListener("honyaku:secretary-status", receive);
+    return () =>
+      window.removeEventListener("honyaku:secretary-status", receive);
   }, [visible]);
 
-  const status = useMemo(() => MESSAGES[index], [index]);
   if (!visible) return null;
 
   return (
-    <aside className={`secretary-presence ${open ? "is-open" : "is-closed"}`} aria-label="翻訳王 秘書">
+    <aside
+      className={`secretary-presence ${open ? "is-open" : "is-closed"} tone-${status.tone || "idle"}`}
+      aria-label="翻訳王 状態アシスタント"
+    >
       <button
         className="secretary-core"
         type="button"
-        aria-label={open ? "秘書を小さくする" : "秘書を開く"}
+        aria-label={
+          open ? "状態表示を小さくする" : `状態表示を開く。${status.message}`
+        }
         onClick={() => setOpen((value) => !value)}
       >
         <span className="secretary-halo halo-a" />
         <span className="secretary-halo halo-b" />
         <span className="secretary-pulse" />
         <Sparkles size={20} strokeWidth={1.5} />
+        {Boolean(status.badge) && (
+          <strong className="secretary-badge">{status.badge}</strong>
+        )}
       </button>
 
-      <div className="secretary-card" aria-live="polite">
+      <div className="secretary-card" aria-live="polite" aria-hidden={!open}>
         <div className="secretary-kicker">
           <i />
           SECRETARY
-          <span>翻訳王</span>
+          <span>STATUS</span>
         </div>
-        <p key={status}>{status}</p>
+        <p key={status.message}>{status.message}</p>
+        <button
+          type="button"
+          className="secretary-action"
+          tabIndex={open ? 0 : -1}
+          onClick={() =>
+            window.dispatchEvent(
+              new CustomEvent("honyaku:secretary-action", {
+                detail: { action: status.action },
+              }),
+            )
+          }
+        >
+          {status.label}
+          <ArrowRight size={13} />
+        </button>
         <div className="secretary-wave" aria-hidden="true">
-          <i /><i /><i /><i /><i /><i /><i />
+          <i />
+          <i />
+          <i />
+          <i />
+          <i />
+          <i />
+          <i />
         </div>
       </div>
     </aside>

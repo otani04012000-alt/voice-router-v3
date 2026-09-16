@@ -41,7 +41,7 @@ function isNonEmptyString(value: unknown, maxLength: number): value is string {
 function parseTranslation(value: unknown): TranslationPayload | undefined {
   if (!value || typeof value !== "object") return undefined
   const t = value as TranslationPayload
-  const languages = ["ja", "vi", "km", "en"]
+  const languages = ["ja", "vi", "km", "zh", "en"]
   if (!languages.includes(t.source) || !languages.includes(t.target) ||
       !isNonEmptyString(t.original, 600) || !isNonEmptyString(t.translated, 5000) ||
       !["openrouter", "mymemory", "identity"].includes(t.provider) || typeof t.toneApplied !== "boolean") return undefined

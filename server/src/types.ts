@@ -1,8 +1,8 @@
 export type TranslationPayload = {
   original: string
   translated: string
-  source: "ja" | "vi" | "km" | "en"
-  target: "ja" | "vi" | "km" | "en"
+  source: "ja" | "vi" | "km" | "zh" | "en"
+  target: "ja" | "vi" | "km" | "zh" | "en"
   provider: "openrouter" | "mymemory" | "identity"
   toneApplied: boolean
 }
