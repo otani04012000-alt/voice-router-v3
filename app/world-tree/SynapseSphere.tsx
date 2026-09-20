@@ -80,8 +80,8 @@ const valleyFragmentShader = `
 `
 
 function BackgroundValley() {
-  const meshRef = useRef(null)
-  const materialRef = useRef(null)
+  const meshRef = useRef<THREE.Mesh>(null)
+  const materialRef = useRef<THREE.ShaderMaterial>(null)
   const initialSize =
     typeof window !== 'undefined'
       ? { width: window.innerWidth, height: window.innerHeight }
@@ -137,7 +137,7 @@ function BackgroundValley() {
 }
 
 function MidgroundParticles({ count = 700 }: { count?: number }) {
-  const pointsRef = useRef(null)
+  const pointsRef = useRef<THREE.Points>(null)
 
   const positions = useMemo(() => {
     const pos = new Float32Array(count * 3)
@@ -161,7 +161,7 @@ function MidgroundParticles({ count = 700 }: { count?: number }) {
   return (
     <points ref={pointsRef} renderOrder={-1}>
       <bufferGeometry>
-        <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} count={count} array={positions} itemSize={3} />
       </bufferGeometry>
       <pointsMaterial
         size={0.14}
@@ -176,8 +176,8 @@ function MidgroundParticles({ count = 700 }: { count?: number }) {
 }
 
 function SynapseCore({ nodeCount }: { nodeCount: number }) {
-  const ref = useRef(null)
-  const glow = useRef(null)
+  const ref = useRef<THREE.Mesh>(null)
+  const glow = useRef<THREE.Mesh>(null)
   useFrame((state, delta) => {
     if (ref.current) ref.current.rotation.y += delta * 0.15
     if (glow.current) {
@@ -223,7 +223,7 @@ function FileNode({
   index: number
   onClick?: () => void
 }) {
-  const ref = useRef(null)
+  const ref = useRef<THREE.Mesh>(null)
   const [hover, setHover] = useState(false)
   useFrame((state) => {
     if (!ref.current) return
@@ -301,7 +301,7 @@ function SynapseLink({
   color: string
   strength: number
 }) {
-  const ref = useRef(null)
+  const ref = useRef<any>(null)
   useFrame((state) => {
     if (!ref.current || !ref.current.material) return
     const t = state.clock.elapsedTime
