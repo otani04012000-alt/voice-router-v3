@@ -1,15 +1,183 @@
 'use client'
 
+// @ts-nocheck
 /* eslint-disable @typescript-eslint/ban-ts-comment, react-hooks/exhaustive-deps */
 import React, { useRef, useMemo, useState } from 'react'
-import type { Mesh } from 'three'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, Stars, Html, Line } from '@react-three/drei'
+import * as THREE from 'three'
 
-// ─── 中心のコア球体：脈動しながら回転する ──────────────
+const VALLEY_ZOOM_MAX = 1e7
+const VALLEY_Z_START = 16.0
+const VALLEY_Z_END = 0.6
+
+const valleyVertexShader = `
+  varying vec2 vUv;
+  varying float vFogDepth;
+  void main() {
+    vUv = uv;
+    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+    vFogDepth = -mvPosition.z;
+    gl_Position = projectionMatrix * mvPosition;
+  }
+`
+
+const valleyFragmentShader = `
+  precision highp float;
+  uniform float uTime;
+  uniform float uZoom;
+  uniform vec2 uCenter;
+  uniform vec2 uResolution;
+  uniform vec3 uFogColor;
+  uniform float uFogDensity;
+  varying vec2 vUv;
+  varying float vFogDepth;
+
+  void main() {
+    vec2 uv = (vUv - 0.5) * 2.0;
+    uv.x *= uResolution.x / uResolution.y;
+
+    float scale = 1.0 / uZoom;
+    vec2 c = uCenter + uv * scale;
+
+    vec2 z = vec2(0.0);
+    float iter = 0.0;
+    const float MAX_ITER = 260.0;
+
+    for (float i = 0.0; i < MAX_ITER; i++) {
+      if (dot(z, z) > 256.0) break;
+      z = vec2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c;
+      iter += 1.0;
+    }
+
+    vec3 col;
+    if (iter >= MAX_ITER) {
+      col = vec3(0.02, 0.05, 0.035);
+    } else {
+      float logZn = log(dot(z, z)) / 2.0;
+      float nu = log(logZn / log(2.0)) / log(2.0);
+      float smoothIter = iter + 1.0 - nu;
+      float t = fract(smoothIter / MAX_ITER * 6.0 + uTime * 0.015);
+
+      vec3 amber  = vec3(0.784, 0.663, 0.431);
+      vec3 bark   = vec3(0.353, 0.290, 0.157);
+      vec3 forest = vec3(0.122, 0.180, 0.133);
+      vec3 indigo = vec3(0.086, 0.114, 0.200);
+
+      if (t < 0.33) col = mix(indigo, forest, t / 0.33);
+      else if (t < 0.66) col = mix(forest, bark, (t - 0.33) / 0.33);
+      else col = mix(bark, amber, (t - 0.66) / 0.34);
+
+      float depthFade = smoothstep(0.0, 40.0, smoothIter);
+      col *= 0.35 + depthFade * 0.9;
+    }
+
+    float fogFactor = clamp(1.0 - exp(-uFogDensity * uFogDensity * vFogDepth * vFogDepth), 0.0, 1.0);
+    col = mix(col, uFogColor, fogFactor * 0.6);
+
+    gl_FragColor = vec4(col, 1.0);
+  }
+`
+
+function BackgroundValley() {
+  const meshRef = useRef(null)
+  const materialRef = useRef(null)
+  const initialSize =
+    typeof window !== 'undefined'
+      ? { width: window.innerWidth, height: window.innerHeight }
+      : { width: 1280, height: 720 }
+
+  const uniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uZoom: { value: 1.0 },
+      uCenter: { value: new THREE.Vector2(-0.743643887037, 0.131825904205) },
+      uResolution: { value: new THREE.Vector2(initialSize.width, initialSize.height) },
+      uFogColor: { value: new THREE.Color('#0a1c15') },
+      uFogDensity: { value: 0.05 },
+    }),
+    [],
+  )
+
+  useFrame((state) => {
+    const cameraZ = state.camera.position.z
+    const depth = THREE.MathUtils.clamp(
+      (VALLEY_Z_START - cameraZ) / (VALLEY_Z_START - VALLEY_Z_END),
+      0.0,
+      1.0,
+    )
+    const zoom = Math.pow(VALLEY_ZOOM_MAX, depth)
+
+    if (materialRef.current) {
+      materialRef.current.uniforms.uTime.value = state.clock.elapsedTime
+      materialRef.current.uniforms.uZoom.value = zoom
+      materialRef.current.uniforms.uResolution.value.set(state.size.width, state.size.height)
+    }
+
+    if (meshRef.current) {
+      meshRef.current.position.copy(state.camera.position)
+      meshRef.current.quaternion.copy(state.camera.quaternion)
+      meshRef.current.translateZ(-200)
+    }
+  })
+
+  return (
+    <mesh ref={meshRef} renderOrder={-2}>
+      <planeGeometry args={[1000, 1000]} />
+      <shaderMaterial
+        ref={materialRef}
+        vertexShader={valleyVertexShader}
+        fragmentShader={valleyFragmentShader}
+        uniforms={uniforms}
+        depthWrite={false}
+        depthTest={false}
+      />
+    </mesh>
+  )
+}
+
+function MidgroundParticles({ count = 700 }: { count?: number }) {
+  const pointsRef = useRef(null)
+
+  const positions = useMemo(() => {
+    const pos = new Float32Array(count * 3)
+    for (let i = 0; i < count; i++) {
+      const r = 6 + Math.random() * 34
+      const theta = Math.random() * Math.PI * 2
+      pos[i * 3] = Math.cos(theta) * r
+      pos[i * 3 + 1] = (Math.random() - 0.5) * 26
+      pos[i * 3 + 2] = Math.sin(theta) * r - 8
+    }
+    return pos
+  }, [count])
+
+  useFrame((state) => {
+    if (!pointsRef.current) return
+    const t = state.clock.elapsedTime
+    pointsRef.current.rotation.y = t * 0.04
+    pointsRef.current.position.z = state.camera.position.z * 0.3
+  })
+
+  return (
+    <points ref={pointsRef} renderOrder={-1}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
+      </bufferGeometry>
+      <pointsMaterial
+        size={0.14}
+        color="#c8a96e"
+        transparent
+        opacity={0.55}
+        blending={THREE.AdditiveBlending}
+        depthWrite={false}
+      />
+    </points>
+  )
+}
+
 function SynapseCore({ nodeCount }: { nodeCount: number }) {
-  const ref = useRef<Mesh>(null)
-  const glow = useRef<Mesh>(null)
+  const ref = useRef(null)
+  const glow = useRef(null)
   useFrame((state, delta) => {
     if (ref.current) ref.current.rotation.y += delta * 0.15
     if (glow.current) {
@@ -20,7 +188,7 @@ function SynapseCore({ nodeCount }: { nodeCount: number }) {
   const coreScale = Math.min(1.3, 0.75 + nodeCount * 0.03)
   return (
     <>
-      <mesh ref={ref} scale={coreScale}>
+      <mesh ref={ref} scale={coreScale} renderOrder={1}>
         <sphereGeometry args={[0.75, 64, 64]} />
         <meshStandardMaterial
           color="#c8a96e"
@@ -30,7 +198,7 @@ function SynapseCore({ nodeCount }: { nodeCount: number }) {
           roughness={0.3}
         />
       </mesh>
-      <mesh ref={glow} scale={coreScale}>
+      <mesh ref={glow} scale={coreScale} renderOrder={1}>
         <sphereGeometry args={[0.95, 32, 32]} />
         <meshBasicMaterial color="#c8a96e" transparent opacity={0.08} />
       </mesh>
@@ -38,7 +206,6 @@ function SynapseCore({ nodeCount }: { nodeCount: number }) {
   )
 }
 
-// ─── ファイル1つ＝1ノード。浮遊しながら光る球 ───────────
 function FileNode({
   position,
   fileName,
@@ -56,7 +223,7 @@ function FileNode({
   index: number
   onClick?: () => void
 }) {
-  const ref = useRef<Mesh>(null)
+  const ref = useRef(null)
   const [hover, setHover] = useState(false)
   useFrame((state) => {
     if (!ref.current) return
@@ -71,6 +238,7 @@ function FileNode({
     <group position={position}>
       <mesh
         ref={ref}
+        renderOrder={1}
         onPointerOver={(e: any) => {
           e.stopPropagation()
           setHover(true)
@@ -124,7 +292,6 @@ function FileNode({
   )
 }
 
-// ─── コアからノードへの接続線。強度で太さ・脈動が変わる ──
 function SynapseLink({
   to,
   color,
@@ -134,7 +301,7 @@ function SynapseLink({
   color: string
   strength: number
 }) {
-  const ref = useRef<React.ComponentRef<typeof Line>>(null)
+  const ref = useRef(null)
   useFrame((state) => {
     if (!ref.current || !ref.current.material) return
     const t = state.clock.elapsedTime
@@ -149,11 +316,11 @@ function SynapseLink({
       lineWidth={0.8 + strength * 1.8}
       transparent
       opacity={0.4}
+      renderOrder={1}
     />
   )
 }
 
-// ─── ノード群を球面状に配置する ────────────────────────
 function SynapseGraph({
   nodes,
   onSelect,
@@ -164,7 +331,6 @@ function SynapseGraph({
   const positions = useMemo(() => {
     const n = nodes.length
     return nodes.map((_, i) => {
-      // フィボナッチ球面分布：ノードが増えるほど自然に球状に広がる
       const goldenAngle = Math.PI * (3 - Math.sqrt(5))
       const y = n > 1 ? 1 - (i / (n - 1)) * 2 : 0
       const radiusAtY = Math.sqrt(Math.max(0, 1 - y * y))
@@ -200,7 +366,6 @@ function SynapseGraph({
   )
 }
 
-// ─── エクスポート：3D空間全体 ───────────────────────────
 export default function SynapseSphere({
   nodes,
   onSelect,
@@ -222,21 +387,25 @@ export default function SynapseSphere({
           '#05070a',
       }}
     >
-      <Canvas camera={{ position: [0, 0, 9], fov: 55 }} style={{ width: '100%', height: '100%' }}>
-        <ambientLight intensity={0.45} />
+      <Canvas camera={{ position: [0, 0, 9], fov: 55, near: 0.05, far: 2000 }} style={{ width: '100%', height: '100%' }}>
+        <ambientLight intensity={0.4} />
         <pointLight position={[6, 6, 6]} intensity={1.4} color="#ff8a5c" />
         <pointLight position={[-6, -4, -2]} intensity={1.1} color="#5cd6a0" />
         <pointLight position={[0, -3, 4]} intensity={1.0} color="#a06cf0" />
         <pointLight position={[0, 0, 3]} intensity={0.7} color="#ffffff" />
         <Stars radius={60} depth={30} count={2200} factor={3.2} fade speed={0.4} />
+
+        <BackgroundValley />
+        <MidgroundParticles count={700} />
         <SynapseGraph nodes={nodes} onSelect={onSelect} />
+
         <OrbitControls
           enablePan={false}
           enableZoom
           rotateSpeed={0.55}
           zoomSpeed={0.5}
-          minDistance={4}
-          maxDistance={18}
+          minDistance={0.6}
+          maxDistance={16}
           autoRotate
           autoRotateSpeed={0.35}
           target={[0, 0, 0]}
