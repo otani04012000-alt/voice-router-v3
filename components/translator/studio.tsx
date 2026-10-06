@@ -771,7 +771,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                     className="room-new-message"
                     onClick={markMessagesRead}
                   >
-                    <Bell size={13} />{uiText("新着")}{unreadCount}{uiText("件を見る")}</button>
+                    <Bell size={13} />{uiText(`新着 ${unreadCount}件を見る`)}</button>
                 )}
                 {socket.members.map((member) => (
                   <span className="room-member" key={member.id}>
@@ -845,7 +845,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
               >
                 {Object.entries(LANGUAGES).map(([key, l]) => (
                   <option value={key} key={key}>
-                    {l.native} · {l.label === l.native ? "JA" : uiText(l.label)}
+                    {l.native}{l.label === l.native ? " · JA" : uiText(l.label) === l.native ? "" : ` · ${uiText(l.label)}`}
                   </option>
                 ))}
               </select>
@@ -876,7 +876,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
               >
                 {Object.entries(LANGUAGES).map(([key, l]) => (
                   <option value={key} key={key}>
-                    {l.native} · {l.label === l.native ? "JA" : uiText(l.label)}
+                    {l.native}{l.label === l.native ? " · JA" : uiText(l.label) === l.native ? "" : ` · ${uiText(l.label)}`}
                   </option>
                 ))}
               </select>

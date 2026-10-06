@@ -26,6 +26,7 @@ test("invitation locale wins over saved preferences and accepts Vietnamese and K
 test("dynamic notices preserve names and counts and never interpret arbitrary text as dictionary objects", () => {
   assert.equal(translateUi("vi", "Linhさんから新着メッセージが届きました。"), "Linh đã gửi tin nhắn mới.");
   assert.equal(translateUi("vi", "Linhさんとして入室します。"), "Linh — đang vào phòng.");
+  assert.equal(translateUi("vi", "新着 2件を見る"), "Xem 2 tin mới");
   assert.equal(translateUi("km", "2人の部屋"), "បន្ទប់មាន 2 នាក់");
   assert.equal(translateUi("vi", "Daraさんが退室しました。"), "Dara đã rời phòng.");
   for (const language of ["ja", "zh", "vi", "km"] as const) {

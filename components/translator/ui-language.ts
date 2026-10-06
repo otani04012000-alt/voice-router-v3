@@ -232,7 +232,7 @@ const VIETNAMESE: Record<string, string> = {
   "新着通知をオン": "Bật thông báo tin mới",
   "ふたりだけの、秘密の部屋": "Phòng riêng chỉ dành cho hai người",
   "あなたと、目の前の誰かのために": "Dành cho bạn và người trước mặt",
-  "ことばの向こうに、": "Bên kia ngôn ngữ,",
+  "ことばの向こうに、": "Bên kia ngôn ngữ, ",
   "人がいる。": "là một con người.",
   "それぞれの言葉で話して、同じ気持ちに近づく。": "Nói bằng ngôn ngữ của mình để hiểu nhau hơn.",
   "話す。伝わる。会話が、もう一歩近くなる。": "Cất lời, hiểu nhau, gần nhau thêm một bước.",
@@ -610,6 +610,7 @@ export function translateUi(language: UiLanguage, text: string): string {
   if (Object.hasOwn(dictionary, text)) return dictionary[text];
   const words = DYNAMIC[language];
   return text
+    .replace(/新着 (\d+)件を見る/g, language === "zh" ? "查看 $1 条新消息" : language === "vi" ? "Xem $1 tin mới" : "មើលសារថ្មី $1")
     .replace(/さんとして入室します。/g, language === "zh" ? "，正在进入房间。" : language === "vi" ? " — đang vào phòng." : " — កំពុងចូលបន្ទប់។")
     .replace(/さんからメッセージが届きました。/g, words.received)
     .replace(/さんが入室しました。/g, language === "zh" ? "进入了房间。" : language === "vi" ? " đã vào phòng." : " បានចូលបន្ទប់។")
