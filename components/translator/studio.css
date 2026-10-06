@@ -247,3 +247,114 @@
 .honyaku[data-ui-language="km"],.honyaku[data-ui-language="km"] *{letter-spacing:0!important}
 .honyaku[data-ui-language="km"] .wordmark,.honyaku[data-ui-language="km"] textarea::placeholder{font-family:"Noto Sans Khmer Variable","Noto Sans Khmer",var(--sans)}
 .honyaku[data-ui-language="km"] .language-bar select{font-family:"Noto Sans Khmer Variable","Noto Sans Khmer",var(--sans);font-size:17px}
+
+/* OTANI EDITORIAL — 黒を沈ませず、声と訳文を主役にする */
+.honyaku{
+--bg:#090806;
+--surface:#14110c;
+--surface-raised:#1b1710;
+--ink:#fff8e9;
+--muted:#b9ad96;
+--gold:#e0b85f;
+--gold-bright:#f4d58a;
+--gold-soft:rgba(224,184,95,.13);
+--line:rgba(224,184,95,.3);
+--line-faint:rgba(255,248,233,.12);
+background:
+radial-gradient(700px 420px at 82% 10%,rgba(224,184,95,.09),transparent 68%),
+radial-gradient(600px 480px at 18% 90%,rgba(119,88,37,.09),transparent 70%),
+var(--bg)
+}
+.honyaku::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.22;background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.014) 1px,transparent 1px);background-size:48px 48px;mask-image:linear-gradient(to bottom,black,transparent 78%)}
+.honyaku .studio-rail,.honyaku .studio-body{position:relative;z-index:1}
+.honyaku .studio-header{border-bottom-color:var(--line);margin-bottom:28px}
+.honyaku .wordmark{color:var(--ink);font-size:25px;text-shadow:0 0 34px rgba(224,184,95,.18)}
+.honyaku .wordmark::after{content:" / TRANSLATION CONCIERGE";font-family:var(--sans);font-size:8px;font-weight:500;letter-spacing:.25em;color:var(--gold);vertical-align:middle;margin-left:10px}
+.honyaku .outline-button{background:rgba(255,255,255,.02);border-color:var(--line);color:var(--ink)}
+.honyaku .ui-language-switch button{color:#938977}
+.honyaku .ui-language-switch button[aria-pressed="true"]{color:var(--gold-bright)}
+.honyaku .language-bar{position:relative;padding:18px 20px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(135deg,rgba(255,255,255,.035),rgba(255,255,255,.012));box-shadow:inset 0 1px rgba(255,255,255,.035)}
+.honyaku .language-bar::before{content:"LANGUAGE ROUTE";position:absolute;top:-8px;left:18px;padding:0 8px;background:var(--bg);font-size:8px;letter-spacing:.24em;color:var(--gold)}
+.honyaku .language-bar label>span{color:#b3a892}
+.honyaku .language-bar select{font-size:20px;font-weight:500}
+.honyaku .swap-button{background:var(--gold);border-color:var(--gold);color:#161006;box-shadow:0 0 28px rgba(224,184,95,.18)}
+.honyaku .input-card,.honyaku .output-card{min-width:0}
+.honyaku .input-card{position:relative;padding:28px;border:1px solid var(--line-faint);border-radius:24px;background:linear-gradient(145deg,rgba(27,23,16,.96),rgba(12,11,8,.88));overflow:hidden}
+.honyaku .input-card::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:linear-gradient(transparent,var(--gold),transparent);opacity:.8}
+.honyaku .card-heading h2{color:#c7bba4;font-size:12px}
+.honyaku .speaker-switch{padding:4px;border:1px solid var(--line-faint);border-radius:12px;background:rgba(0,0,0,.22);gap:0}
+.honyaku .speaker-switch button{padding:8px 13px;border-radius:8px}
+.honyaku .speaker-switch button.selected{background:var(--gold);color:#181107}
+.honyaku .speaker-switch button.selected::after{display:none}
+.honyaku .conversation-mode-toggle{padding:13px 0}
+.honyaku .mode-copy strong{color:var(--ink)}
+.honyaku textarea{min-height:164px;padding:18px 0 22px;font-size:25px;line-height:1.68;border-bottom-color:var(--line);caret-color:var(--gold)}
+.honyaku textarea::placeholder{color:rgba(255,248,233,.46)}
+.honyaku .mic-button,.honyaku .translate-button{height:58px}
+.honyaku .mic-button{background:rgba(255,255,255,.025);border-color:rgba(224,184,95,.42)}
+.honyaku .translate-button{background:linear-gradient(135deg,var(--gold-bright),#bc8e37);box-shadow:0 12px 34px rgba(142,100,29,.18);color:#160f05}
+.honyaku .translate-button:hover:not(:disabled){background:linear-gradient(135deg,#ffe2a0,#c99a41);transform:translateY(-1px)}
+.honyaku .voice-console{min-height:38px;padding:0 4px;color:#b9ad96}
+.honyaku .voice-console-label{color:var(--ink)}
+.honyaku .tone{border-color:rgba(255,248,233,.14);color:#b9ad96}
+.honyaku .tone.active{color:var(--gold-bright)}
+.honyaku .output-card:not(.has-result){position:relative;display:flex;min-height:540px;align-items:center;justify-content:center;border:1px solid var(--line-faint);border-radius:24px;background:radial-gradient(circle at 50% 48%,rgba(224,184,95,.09),transparent 32%),rgba(255,255,255,.012);overflow:hidden}
+.honyaku .output-card:not(.has-result)::before{content:"";position:absolute;width:170px;height:170px;border:1px solid var(--line);border-radius:50%;box-shadow:0 0 0 24px rgba(224,184,95,.018),0 0 0 48px rgba(224,184,95,.01)}
+.honyaku .output-card:not(.has-result)::after{content:"声が届く場所";position:relative;margin-top:230px;font-family:var(--serif);font-size:15px;letter-spacing:.18em;color:#c9b98f}
+.honyaku .output-card.has-result{padding:30px 30px 30px 34px;border:1px solid var(--line);border-radius:24px;background:linear-gradient(145deg,rgba(27,23,16,.97),rgba(10,9,7,.94));box-shadow:0 30px 80px rgba(0,0,0,.22)}
+.honyaku .output-card.has-result::before{left:0;width:3px;border-radius:24px 0 0 24px}
+.honyaku .translated-text{font-size:clamp(31px,7.8vw,42px);line-height:1.48;color:#fffaf0;text-wrap:pretty}
+.honyaku .original-caption{color:#c0b49f}
+.honyaku .result-tools{border-color:var(--line)}
+.honyaku .result-tools button{color:#c0b49f}
+.honyaku .result-tools button svg{color:var(--gold-bright)}
+.honyaku .conversation-turn{border-top-color:var(--line)}
+.honyaku .turn-translation{font-size:20px}
+.honyaku .rail-button{color:#a99d87}
+.honyaku .rail-button.active{color:var(--gold-bright)}
+
+@media (min-width:900px){
+.honyaku .studio-body{max-width:1400px;padding-left:calc(76px + 5vw);padding-right:5vw}
+.honyaku .studio-header{padding-top:25px;margin-bottom:34px}
+.honyaku .studio-content{gap:30px}
+.honyaku .language-bar{max-width:none}
+.honyaku .workbench{grid-template-columns:minmax(420px,.92fr) minmax(470px,1.08fr);gap:28px}
+.honyaku textarea{min-height:190px}
+.honyaku .output-card.has-result{top:24px}
+}
+
+@media (max-width:899px){
+.honyaku{--gutter:16px;background:radial-gradient(500px 320px at 82% 0,rgba(224,184,95,.1),transparent 68%),var(--bg)}
+.honyaku::before{background-size:32px 32px}
+.honyaku .studio-body{max-width:640px;padding-bottom:max(48px,env(safe-area-inset-bottom))}
+.honyaku .studio-header{padding-top:max(16px,env(safe-area-inset-top));padding-bottom:18px;padding-right:84px;margin-bottom:20px}
+.honyaku .wordmark{font-size:21px}
+.honyaku .wordmark::after{display:none}
+.honyaku .outline-button{height:34px;padding:0 12px;font-size:11px}
+.honyaku .ui-language-switch{gap:14px;overflow-x:auto;scrollbar-width:none}
+.honyaku .ui-language-switch button{flex:none}
+.honyaku .language-bar{padding:17px 14px 14px;border-radius:16px;gap:9px}
+.honyaku .language-bar select{font-size:17px}
+.honyaku .swap-button{width:36px;height:36px}
+.honyaku .workbench{gap:22px}
+.honyaku .input-card{padding:20px 18px;border-radius:20px}
+.honyaku .speaker-switch{align-self:stretch;display:grid;grid-template-columns:1fr 1fr}
+.honyaku .speaker-switch button{font-size:12px;white-space:normal}
+.honyaku textarea{min-height:124px;font-size:22px;padding-top:12px}
+.honyaku .input-actions{grid-template-columns:1fr 1.3fr}
+.honyaku .mic-button,.honyaku .translate-button{height:54px;padding:0 12px;font-size:13px}
+.honyaku .output-card:not(.has-result){display:none}
+.honyaku .output-card.has-result{padding:24px 18px 22px 24px;border-radius:20px}
+.honyaku .translated-text{font-size:clamp(28px,8vw,36px)}
+.honyaku .result-tools button{height:64px;font-size:10px}
+.honyaku .conversation-turn{grid-template-columns:28px 1fr auto;gap:10px}
+}
+
+@media (max-width:380px){
+.honyaku .studio-header{padding-right:78px}
+.honyaku .ui-language-switch{gap:11px}
+.honyaku .language-bar{grid-template-columns:minmax(0,1fr) 34px minmax(0,1fr)}
+.honyaku .language-bar select{font-size:15px}
+.honyaku .input-card{padding:18px 15px}
+.honyaku .input-actions{grid-template-columns:1fr 1fr}
+}
