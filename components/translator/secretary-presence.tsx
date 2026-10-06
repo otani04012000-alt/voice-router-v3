@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { ArrowRight, Sparkles } from "lucide-react";
+import { translateUi, type UiLanguage } from "./ui-language";
 import "./secretary-presence.css";
 
 type SecretaryDetail = {
+  uiLanguage?: UiLanguage;
   message: string;
   label: string;
   action: "focus" | "join" | "read" | "notifications";
@@ -38,18 +40,19 @@ export default function SecretaryPresence() {
       window.removeEventListener("honyaku:secretary-status", receive);
   }, [visible]);
 
+  const uiText = (value: string) => translateUi(status.uiLanguage || "ja", value);
   if (!visible) return null;
 
   return (
     <aside
       className={`secretary-presence ${open ? "is-open" : "is-closed"} tone-${status.tone || "idle"}`}
-      aria-label="翻訳王 状態アシスタント"
+      aria-label={uiText("翻訳王 状態アシスタント")}
     >
       <button
         className="secretary-core"
         type="button"
         aria-label={
-          open ? "状態表示を小さくする" : `状態表示を開く。${status.message}`
+          open ? uiText("状態表示を小さくする") : `${status.uiLanguage === "zh" ? "打开状态提示。" : "状態表示を開く。"}${uiText(status.message)}`
         }
         onClick={() => setOpen((value) => !value)}
       >
@@ -65,10 +68,10 @@ export default function SecretaryPresence() {
       <div className="secretary-card" aria-live="polite" aria-hidden={!open}>
         <div className="secretary-kicker">
           <i />
-          SECRETARY
-          <span>STATUS</span>
+          {status.uiLanguage === "zh" ? "语言助手" : "ことばの秘書"}
+          <span>{status.uiLanguage === "zh" ? "状态" : "状態"}</span>
         </div>
-        <p key={status.message}>{status.message}</p>
+        <p key={status.message}>{uiText(status.message)}</p>
         <button
           type="button"
           className="secretary-action"
@@ -81,7 +84,7 @@ export default function SecretaryPresence() {
             )
           }
         >
-          {status.label}
+          {uiText(status.label)}
           <ArrowRight size={13} />
         </button>
         <div className="secretary-wave" aria-hidden="true">

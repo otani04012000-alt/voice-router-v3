@@ -44,6 +44,7 @@ import {
 import { useRoomSocket } from "@/app/secret-room/[roomId]/use-room-socket";
 import type { RoomMessage } from "@/app/secret-room/[roomId]/types";
 import { useVoice } from "./use-voice";
+import { translateUi, type UiLanguage } from "./ui-language";
 import "./studio.css";
 
 const SAVED_KEY = "honyaku.saved.v1";
@@ -98,8 +99,14 @@ function time(value: number) {
 
 export default function TranslationStudio({ roomId }: { roomId?: string }) {
   const remote = Boolean(roomId);
+  const [uiLanguage, setUiLanguage] = useState<UiLanguage>("ja");
+  const uiText = (value: string) => translateUi(uiLanguage, value);
+  const changeUiLanguage = (value: UiLanguage) => {
+    setUiLanguage(value);
+    try { localStorage.setItem("honyaku.ui-language", value); } catch {}
+  };
   const [myLanguage, setMyLanguage] = useState<Language>("ja");
-  const [otherLanguage, setOtherLanguage] = useState<Language>("vi");
+  const [otherLanguage, setOtherLanguage] = useState<Language>("zh");
   const [speaker, setSpeaker] = useState<"you" | "partner">("you");
   const [tone, setTone] = useState<Tone>("natural");
   const [text, setText] = useState("");
@@ -171,6 +178,10 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
       }
     } catch {}
     const query = new URLSearchParams(window.location.search);
+    try {
+      const preference = query.get("ui") || localStorage.getItem("honyaku.ui-language");
+      setUiLanguage(preference === "zh" || (!preference && navigator.language.startsWith("zh")) ? "zh" : "ja");
+    } catch { setUiLanguage(query.get("ui") === "zh" ? "zh" : "ja"); }
     const from = query.get("from"),
       to = query.get("to");
     if (isLanguage(from) && isLanguage(to) && from !== to) {
@@ -469,6 +480,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
     );
     url.searchParams.set("from", otherLanguage);
     url.searchParams.set("to", myLanguage);
+    url.searchParams.set("ui", otherLanguage === "zh" ? "zh" : uiLanguage);
     void copy(url.toString());
   };
   const exportTurns = () => {
@@ -632,9 +644,10 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
         tone: "idle",
       };
     window.dispatchEvent(
-      new CustomEvent("honyaku:secretary-status", { detail }),
+      new CustomEvent("honyaku:secretary-status", { detail: { ...detail, uiLanguage } }),
     );
   }, [
+    uiLanguage,
     busy,
     memberName,
     notificationPermission,
@@ -648,61 +661,65 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
   ]);
 
   return (
-    <main className="honyaku">
+    <main className="honyaku" lang={uiLanguage === "zh" ? "zh-CN" : "ja"} data-ui-language={uiLanguage} data-conversation-state={busy ? "translating" : voice.listening ? "listening" : result ? "delivered" : "idle"}>
       <aside className="studio-rail">
-        <Link href="/" className="brand-mark" aria-label="翻訳王 ホーム">
+        <Link href="/" className="brand-mark" aria-label={uiText("翻訳王 ホーム")}>
           <Languages size={24} />
         </Link>
         <div className="rail-items">
           <button
             className="rail-button active"
-            aria-label="会話"
+            aria-label={uiText("会話")}
             onClick={() => setPanel(null)}
           >
             <MessageCircle size={21} />
-            <span>会話</span>
+            <span>{uiText("会話")}</span>
           </button>
           <button
             className="rail-button"
-            aria-label="フレーズ帳"
+            aria-label={uiText("フレーズ帳")}
             onClick={() => setPanel("saved")}
           >
             <Bookmark size={21} />
-            <span>フレーズ</span>
+            <span>{uiText("フレーズ")}</span>
           </button>
           <button
             className="rail-button"
-            aria-label="設定"
+            aria-label={uiText("設定")}
             onClick={() => setPanel("settings")}
           >
             <Settings2 size={21} />
-            <span>設定</span>
+            <span>{uiText("設定")}</span>
           </button>
         </div>
         <div className="rail-bottom">
-          <span>大谷企画</span>
+          <span>{uiText("大谷企画")}</span>
           <small>TOKYO</small>
         </div>
       </aside>
       <div className="studio-body">
         <header className="studio-header">
-          <Link href="/" className="wordmark">
-            翻訳王<span>ことばを越えて。</span>
+          <Link href="/" className="wordmark">{uiText("翻訳王")}<span>{uiText("ことばを越えて。")}</span>
           </Link>
           <div className="header-actions">
             <span className="session-badge">
               <i />
               {remote
                 ? socket.connectionState === "connected"
-                  ? `${socket.members.length}人の部屋`
-                  : "接続を準備中"
-                : "対面で話す"}
+                  ? uiText(`${socket.members.length}人の部屋`)
+                  : uiText("接続を準備中")
+                : uiText("対面で話す")}
             </span>
             <button className="outline-button" onClick={share}>
               <Users size={16} />
-              {remote ? "招待リンクをコピー" : "離れた相手と話す"}
+              {remote ? uiText("招待リンクをコピー") : uiText("離れた相手と話す")}
               <ArrowRight size={15} />
             </button>
+            <div className="ui-language-switch" role="group" aria-label="画面の表示言語 / 界面语言">
+              <Globe2 size={15} aria-hidden="true" />
+              <button type="button" lang="ja" aria-pressed={uiLanguage === "ja"} onClick={() => changeUiLanguage("ja")}>日本語</button>
+              <button type="button" lang="zh-CN" aria-pressed={uiLanguage === "zh"} onClick={() => changeUiLanguage("zh")}>中文</button>
+            </div>
           </div>
         </header>
         {remote && !memberName && (
@@ -717,10 +734,10 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
               <span className="room-entry-icon" aria-hidden="true">
                 <UserRound size={24} />
               </span>
-              <p className="eyebrow"><span />秘密の部屋へ入る</p>
-              <h1>誰がいるか、名前でわかる部屋です。</h1>
-              <p>相手の画面にも表示する名前を入力してください。部屋の履歴と同じく、サーバーには保存しません。</p>
-              <label htmlFor="room-member-name">あなたの表示名</label>
+              <p className="eyebrow"><span />{uiText("秘密の部屋へ入る")}</p>
+              <h1>{uiText("誰がいるか、名前でわかる部屋です。")}</h1>
+              <p>{uiText("相手の画面にも表示する名前を入力してください。部屋の履歴と同じく、サーバーには保存しません。")}</p>
+              <label htmlFor="room-member-name">{uiText("あなたの表示名")}</label>
               <input
                 id="room-member-name"
                 name="room-member-name"
@@ -729,21 +746,19 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                 maxLength={40}
                 value={memberNameDraft}
                 onChange={(event) => setMemberNameDraft(event.target.value)}
-                placeholder="例：大谷"
+                placeholder={uiText("例：大谷")}
               />
               <button type="submit" disabled={!memberNameDraft.trim()}>
-                <Users size={17} />
-                この名前で入室
-              </button>
+                <Users size={17} />{uiText("この名前で入室")}</button>
             </form>
           </div>
         )}
         <div className="studio-content">
           {remote && memberName && (
-            <section className="room-members" aria-label="入室中の参加者">
+            <section className="room-members" aria-label={uiText("入室中の参加者")}>
               <div className="room-members-heading">
-                <span><Users size={15} />入室中</span>
-                <small>名前を確認できる人だけが会話に参加しています</small>
+                <span><Users size={15} />{uiText("入室中")}</span>
+                <small>{uiText("名前を確認できる人だけが会話に参加しています")}</small>
               </div>
               <div className="room-member-list">
                 {unreadCount > 0 && (
@@ -752,18 +767,17 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                     className="room-new-message"
                     onClick={markMessagesRead}
                   >
-                    <Bell size={13} />新着 {unreadCount}件を見る
-                  </button>
+                    <Bell size={13} />{uiText("新着")}{unreadCount}{uiText("件を見る")}</button>
                 )}
                 {socket.members.map((member) => (
                   <span className="room-member" key={member.id}>
                     <i aria-hidden="true" />
                     {member.name}
-                    {member.id === memberId && <small>あなた</small>}
+                    {member.id === memberId && <small>{uiText("あなた")}</small>}
                   </span>
                 ))}
                 {socket.connectionState !== "connected" && (
-                  <span className="room-member pending">接続を確認中</span>
+                  <span className="room-member pending">{uiText("接続を確認中")}</span>
                 )}
                 <button
                   type="button"
@@ -772,13 +786,10 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                     setMemberName("");
                     setMemberNameDraft("");
                   }}
-                >
-                  名前を変更
-                </button>
+                >{uiText("名前を変更")}</button>
                 {notificationPermission !== "granted" && (
                   <button type="button" onClick={requestNotifications}>
-                    <Bell size={12} />新着通知をオン
-                  </button>
+                    <Bell size={12} />{uiText("新着通知をオン")}</button>
                 )}
               </div>
             </section>
@@ -788,16 +799,15 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
               <p className="eyebrow">
                 <span />
                 {remote
-                  ? "ふたりだけの、秘密の部屋"
-                  : "あなたと、目の前の誰かのために"}
+                  ? uiText("ふたりだけの、秘密の部屋")
+                  : uiText("あなたと、目の前の誰かのために")}
               </p>
-              <h1>
-                ことばの向こうに、<em>人がいる。</em>
+              <h1>{uiText("ことばの向こうに、")}<em>{uiText("人がいる。")}</em>
               </h1>
               <p className="intro-description">
                 {remote
-                  ? "それぞれの言葉で話して、同じ気持ちに近づく。"
-                  : "話す。伝わる。会話が、もう一歩近くなる。"}
+                  ? uiText("それぞれの言葉で話して、同じ気持ちに近づく。")
+                  : uiText("話す。伝わる。会話が、もう一歩近くなる。")}
               </p>
             </div>
             <div className="language-orbit" aria-hidden="true">
@@ -810,14 +820,19 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
               <span className="orbit-star">✧</span>
             </div>
           </section>
+          <div className="language-bridge" aria-hidden="true">
+            <span>{LANGUAGES[source].native}</span>
+            <div><i /><i /><i /><i /><i /><i /><i /></div>
+            <span>{LANGUAGES[target].native}</span>
+          </div>
           <section
             className={`language-bar ${swapping ? "swapping" : ""}`}
-            aria-label="会話の言語"
+            aria-label={uiText("会話の言語")}
           >
             <label>
-              <span>あなたのことば</span>
+              <span>{uiText("あなたのことば")}</span>
               <select
-                aria-label="あなたの言語"
+                aria-label={uiText("あなたの言語")}
                 disabled={busy || voice.listening}
                 value={myLanguage}
                 onChange={(e) =>
@@ -826,14 +841,14 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
               >
                 {Object.entries(LANGUAGES).map(([key, l]) => (
                   <option value={key} key={key}>
-                    {l.native} · {l.label === l.native ? "JA" : l.label}
+                    {l.native} · {l.label === l.native ? "JA" : uiText(l.label)}
                   </option>
                 ))}
               </select>
             </label>
             <button
               className={`swap-button ${swapping ? "swapping" : ""}`}
-              aria-label="言語を入れ替える"
+              aria-label={uiText("言語を入れ替える")}
               disabled={busy || voice.listening}
               onClick={() => {
                 if (swapTimer.current) clearTimeout(swapTimer.current);
@@ -846,9 +861,9 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
               <ArrowDownUp size={18} />
             </button>
             <label>
-              <span>相手のことば</span>
+              <span>{uiText("相手のことば")}</span>
               <select
-                aria-label="相手の言語"
+                aria-label={uiText("相手の言語")}
                 disabled={busy || voice.listening}
                 value={otherLanguage}
                 onChange={(e) =>
@@ -857,25 +872,21 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
               >
                 {Object.entries(LANGUAGES).map(([key, l]) => (
                   <option value={key} key={key}>
-                    {l.native} · {l.label === l.native ? "JA" : l.label}
+                    {l.native} · {l.label === l.native ? "JA" : uiText(l.label)}
                   </option>
                 ))}
               </select>
             </label>
             <div className="language-bar-note">
               <Globe2 size={17} />
-              <span>
-                それぞれの母語で
-                <br />
-                そのまま、話そう。
-              </span>
+              <span>{uiText("それぞれの母語で")}<br />{uiText("そのまま、話そう。")}</span>
             </div>
           </section>
           {notice && (
             <div className="studio-notice" role="status">
-              <span>{notice}</span>
+              <span>{uiText(notice)}</span>
               <button
-                aria-label="お知らせを閉じる"
+                aria-label={uiText("お知らせを閉じる")}
                 onClick={() => setNotice("")}
               >
                 <X size={16} />
@@ -888,11 +899,11 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
             >
               <div className="card-heading">
                 <span className="number-tag">01</span>
-                <h2>伝えたいこと</h2>
+                <h2>{uiText("伝えたいこと")}</h2>
                 <span className="small-label">{LANGUAGES[source].native}</span>
               </div>
               {!remote && (
-                <div className="speaker-switch" aria-label="話す人">
+                <div className="speaker-switch" aria-label={uiText("話す人")}>
                   <button
                     disabled={busy || voice.listening}
                     className={speaker === "you" ? "selected" : ""}
@@ -900,9 +911,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                       setSpeaker("you");
                       reset();
                     }}
-                  >
-                    あなたが話す
-                  </button>
+                  >{uiText("あなたが話す")}</button>
                   <button
                     disabled={busy || voice.listening}
                     className={speaker === "partner" ? "selected" : ""}
@@ -911,8 +920,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                       reset();
                     }}
                   >
-                    {LANGUAGES[otherLanguage].native} · 相手が話す
-                  </button>
+                    {LANGUAGES[otherLanguage].native}{uiText("· 相手が話す")}</button>
                 </div>
               )}
               <button
@@ -929,11 +937,11 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                   <i />
                 </span>
                 <span className="mode-copy">
-                  <strong>会話モード</strong>
+                  <strong>{uiText("会話モード")}</strong>
                   <small>
                     {conversationMode
-                      ? "声を聞いたら、自動翻訳して読み上げます"
-                      : "声で入力 → 翻訳 → 読み上げをひとつに"}
+                      ? uiText("声を聞いたら、自動翻訳して読み上げます")
+                      : uiText("声で入力 → 翻訳 → 読み上げをひとつに")}
                   </small>
                 </span>
                 <span className="mode-switch" aria-hidden="true">
@@ -946,9 +954,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                   void appendTranslation();
                 }}
               >
-                <label className="sr-only" htmlFor="translation-input">
-                  翻訳する文章
-                </label>
+                <label className="sr-only" htmlFor="translation-input">{uiText("翻訳する文章")}</label>
                 <textarea
                   ref={textarea}
                   id="translation-input"
@@ -958,13 +964,13 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                   lang={source}
                   placeholder={
                     source === "ja"
-                      ? "うまく言おうとしなくていい。\nあなたの言葉で、どうぞ。"
+                      ? uiText("うまく言おうとしなくていい。\nあなたの言葉で、どうぞ。")
                       : source === "vi"
                         ? "Hãy nói bằng ngôn ngữ của bạn…"
                         : source === "km"
                           ? "សូមសរសេរនៅទីនេះ…"
                           : source === "zh"
-                            ? "请用你自己的语言说…"
+                            ? uiText("请用你自己的语言说…")
                           : "Say it in your own words…"
                   }
                   onChange={(e) => {
@@ -995,15 +1001,15 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                   <span>
                     {voice.listening
                       ? voice.interim ||
-                        "聞いています。話し終わったら停止してください。"
-                      : "⌘ / Ctrl ＋ Enter で翻訳"}
+                        uiText("聞いています。話し終わったら停止してください。")
+                      : uiText("⌘ / Ctrl ＋ Enter で翻訳")}
                   </span>
                   <span>
                     {text.length} / {MAX_TEXT}
                   </span>
                 </div>
                 <div className="tone-row">
-                  <span>伝え方</span>
+                  <span>{uiText("伝え方")}</span>
                   <div>
                     {Object.entries(TONES).map(([key, value]) => (
                       <button
@@ -1018,7 +1024,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                           setResult(null);
                         }}
                       >
-                        {value}
+                        {uiText(value)}
                       </button>
                     ))}
                   </div>
@@ -1040,7 +1046,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                     ) : (
                       <Mic size={18} />
                     )}
-                    {voice.listening ? "音声を停止" : "声で入力"}
+                    {voice.listening ? uiText("音声を停止") : uiText("声で入力")}
                   </button>
                   <button
                     className="translate-button"
@@ -1053,16 +1059,18 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                       <Sparkles size={17} />
                     )}
                     {busy
-                      ? "ことばを翻訳中"
+                      ? uiText("ことばを翻訳中")
+                      : uiLanguage === "zh"
+                        ? "翻译"
                       : myLanguage === "vi"
-                        ? "Dịch · 翻訳"
+                        ? uiText("Dịch · 翻訳")
                         : myLanguage === "km"
-                          ? "បកប្រែ · 翻訳"
+                          ? uiText("បកប្រែ · 翻訳")
                           : myLanguage === "zh"
-                            ? "翻译 · 翻訳"
+                            ? uiText("翻译 · 翻訳")
                           : myLanguage === "en"
                             ? "Translate"
-                            : "翻訳する"}
+                            : uiText("翻訳する")}
                     {!busy && <ArrowRight size={17} />}
                   </button>
                 </div>
@@ -1075,7 +1083,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
             >
               <div className="card-heading">
                 <span className="number-tag">02</span>
-                <h2>届くことば</h2>
+                <h2>{uiText("届くことば")}</h2>
                 <span className="small-label">
                   {LANGUAGES[result?.target || target].native}
                 </span>
@@ -1105,13 +1113,9 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                   {result.backTranslation && (
                     <div className="back-translation">
                       <span>
-                        <RotateCcw size={13} />
-                        戻し訳で確かめる
-                      </span>
+                        <RotateCcw size={13} />{uiText("戻し訳で確かめる")}</span>
                       <p>{result.backTranslation}</p>
-                      <small>
-                        同じ翻訳サービスによる参考訳です。正確さの保証ではありません。
-                      </small>
+                      <small>{uiText("同じ翻訳サービスによる参考訳です。正確さの保証ではありません。")}</small>
                     </div>
                   )}
                   <div className="result-tools">
@@ -1127,16 +1131,16 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                       ) : (
                         <Volume2 size={17} />
                       )}
-                      {voice.speaking ? "停止" : "読み上げ"}
+                      {voice.speaking ? uiText("停止") : uiText("読み上げ")}
                     </button>
                     <button
-                      aria-label="訳文をコピー"
+                      aria-label={uiText("訳文をコピー")}
                       onClick={() => void copy(result.translated)}
                     >
                       <Copy size={17} />
                     </button>
                     <button
-                      aria-label={savedResult ? "保存を解除" : "フレーズを保存"}
+                      aria-label={savedResult ? uiText("保存を解除") : uiText("フレーズを保存")}
                       onClick={() => save(result)}
                     >
                       {savedResult ? (
@@ -1151,9 +1155,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                         setFlipped(false);
                       }}
                     >
-                      <Maximize2 size={16} />
-                      相手に見せる
-                    </button>
+                      <Maximize2 size={16} />{uiText("相手に見せる")}</button>
                   </div>
                   <div className="result-bottom">
                     <button
@@ -1165,15 +1167,13 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                         <LoaderCircle size={13} className="spin" />
                       ) : (
                         <RotateCcw size={13} />
-                      )}
-                      戻し訳
-                    </button>
+                      )}{uiText("戻し訳")}</button>
                     <span>
                       {result.provider === "openrouter"
-                        ? "AI翻訳"
+                        ? uiText("AI翻訳")
                         : result.provider === "mymemory"
-                          ? "標準翻訳"
-                          : "原文"}
+                          ? uiText("標準翻訳")
+                          : uiText("原文")}
                     </span>
                     {remote && (
                       <button
@@ -1191,14 +1191,14 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                           <Send size={15} />
                         )}
                         {sentIds.includes(result.id)
-                          ? "中継済み"
+                          ? uiText("中継済み")
                           : socket.members.length < 2
-                            ? "相手の入室待ち"
+                            ? uiText("相手の入室待ち")
                             : myLanguage === "vi"
-                              ? "Gửi · 送る"
+                              ? uiText("Gửi · 送る")
                               : myLanguage === "km"
-                                ? "ផ្ញើ · 送る"
-                                : "相手に送る"}
+                                ? uiText("ផ្ញើ · 送る")
+                                : uiText("相手に送る")}
                       </button>
                     )}
                   </div>
@@ -1220,13 +1220,13 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                   </div>
                   <p>
                     {busy
-                      ? "あなたのことばを、つないでいます。"
-                      : "あなたの気持ちが、ここから届く。"}
+                      ? uiText("あなたのことばを、つないでいます。")
+                      : uiText("あなたの気持ちが、ここから届く。")}
                   </p>
                   <span>
                     {busy
-                      ? "もう少しだけ、お待ちください。"
-                      : "翻訳すると、相手のことばで表示されます。"}
+                      ? uiText("もう少しだけ、お待ちください。")
+                      : uiText("翻訳すると、相手のことばで表示されます。")}
                   </span>
                 </div>
               )}
@@ -1236,44 +1236,42 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
             <span>
               <Shield size={13} />
               {remote
-                ? "部屋の履歴はこの画面を閉じると消えます"
+                ? uiText("部屋の履歴はこの画面を閉じると消えます")
                 : keepHistory
-                  ? "履歴はこの端末に保存中"
-                  : "履歴はこの画面の中だけ"}
+                  ? uiText("履歴はこの端末に保存中")
+                  : uiText("履歴はこの画面の中だけ")}
             </span>
             <span>
               {engine === "openrouter"
-                ? "AI翻訳 · 伝え方の調整に対応"
+                ? uiText("AI翻訳 · 伝え方の調整に対応")
                 : engine === "mymemory"
-                  ? "標準翻訳 · MyMemory"
+                  ? uiText("標準翻訳 · MyMemory")
                   : engine === "loading"
-                    ? "翻訳サービスを確認中"
-                    : "翻訳サービスの確認ができませんでした"}
+                    ? uiText("翻訳サービスを確認中")
+                    : uiText("翻訳サービスの確認ができませんでした")}
               <i className={engine === "unavailable" ? "offline" : ""} />
             </span>
           </div>
           <section className="conversation-section">
             <div className="section-heading">
               <h2>
-                {turns.length ? "ふたりの会話" : "はじめのひとこと"}
+                {turns.length ? uiText("ふたりの会話") : uiText("はじめのひとこと")}
                 <span>
                   {turns.length
-                    ? `${turns.length}件`
-                    : "言葉に迷ったら、ここから。"}
+                    ? uiText(`${turns.length}件`)
+                    : uiText("言葉に迷ったら、ここから。")}
                 </span>
               </h2>
               {turns.length > 0 && (
                 <button className="text-button" onClick={exportTurns}>
-                  <Download size={15} />
-                  書き出す
-                </button>
+                  <Download size={15} />{uiText("書き出す")}</button>
               )}
             </div>
             {turns.length ? (
               <div
                 className="conversation-log"
                 role="log"
-                aria-label="会話の履歴"
+                aria-label={uiText("会話の履歴")}
               >
                 {turns.map((turn) => (
                   <article
@@ -1286,7 +1284,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                     <div className="turn-copy">
                       <div className="turn-meta">
                         <strong>
-                          {turn.speaker === "you" ? "あなた" : "相手"}
+                          {turn.speaker === "you" ? uiText("あなた") : uiText("相手")}
                         </strong>
                         <span>
                           {LANGUAGES[turn.source].native} →{" "}
@@ -1296,13 +1294,13 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                       </div>
                       <p lang={turn.source}>{turn.original}</p>
                       <p lang={turn.target} className="turn-translation">
-                        {turn.provider === "identity" && <small>原文 · </small>}
+                        {turn.provider === "identity" && <small>{uiText("原文 ·")}</small>}
                         {turn.translated}
                       </p>
                     </div>
                     <button
                       className="icon-button"
-                      aria-label="この会話を大きく表示"
+                      aria-label={uiText("この会話を大きく表示")}
                       onClick={() => setPresent(turn)}
                     >
                       <Maximize2 size={15} />
@@ -1311,8 +1309,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                 ))}
                 {typing && (
                   <p className="typing-indicator">
-                    {typingName || "相手"}さんが入力しています…
-                  </p>
+                    {typingName || uiText("相手")}{uiText("さんが入力しています…")}</p>
                 )}
                 <div ref={end} />
               </div>
@@ -1321,35 +1318,33 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                 {phrases.map((p) => (
                   <button
                     className="phrase-card"
-                    key={p.category}
+                    key={uiText(p.category)}
                     disabled={busy || voice.listening}
                     onClick={() => {
                       setSpeaker("you");
-                      setMyLanguage("ja");
-                      if (otherLanguage === "ja") setOtherLanguage("vi");
-                      setText(p.text);
+                      setMyLanguage(uiLanguage);
+                      if (otherLanguage === uiLanguage) setOtherLanguage(uiLanguage === "ja" ? "zh" : "ja");
+                      setText(uiText(p.text));
                       setResult(null);
                       textarea.current?.focus();
                     }}
                   >
                     <span className="phrase-category">
                       <i>{p.icon}</i>
-                      {p.category}
+                      {uiText(p.category)}
                       <ChevronRight size={13} />
                     </span>
-                    <span>{p.text}</span>
+                    <span>{uiText(p.text)}</span>
                   </button>
                 ))}
               </div>
             )}
           </section>
           <footer className="studio-footer">
-            <span>
-              翻訳王 <i>／</i> OTANI KIKAKU
+            <span>{uiText("翻訳王")}<i>／</i> OTANI KIKAKU
             </span>
-            <span>離れていても、ことばはそばに。</span>
-            <Link href="/world-tree">
-              世界樹 <ArrowRight size={12} />
+            <span>{uiText("離れていても、ことばはそばに。")}</span>
+            <Link href="/world-tree">{uiText("世界樹")}<ArrowRight size={12} />
             </Link>
           </footer>
         </div>
@@ -1361,10 +1356,10 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
         onClose={() => setPanel(null)}
       >
         <div className="dialog-heading">
-          <h2>{panel === "saved" ? "あなたのフレーズ帳" : "会話の設定"}</h2>
+          <h2>{panel === "saved" ? uiText("あなたのフレーズ帳") : uiText("会話の設定")}</h2>
           <button
             className="icon-button"
-            aria-label="閉じる"
+            aria-label={uiText("閉じる")}
             onClick={() => setPanel(null)}
           >
             <X size={21} />
@@ -1372,14 +1367,12 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
         </div>
         {panel === "saved" ? (
           <>
-            <p className="dialog-description">
-              この画面を開いていれば、保存した訳文は通信なしでも表示できます。
-            </p>
+            <p className="dialog-description">{uiText("この画面を開いていれば、保存した訳文は通信なしでも表示できます。")}</p>
             {saved.length ? (
               saved.map((t) => (
                 <article className="saved-phrase" key={t.id}>
                   <span>
-                    {LANGUAGES[t.source].label} → {LANGUAGES[t.target].label}
+                    {uiText(LANGUAGES[t.source].label)} → {uiText(LANGUAGES[t.target].label)}
                   </span>
                   <p>{t.original}</p>
                   <p lang={t.target}>{t.translated}</p>
@@ -1391,37 +1384,29 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                         setPanel(null);
                       }}
                     >
-                      <Maximize2 size={15} />
-                      見せる
-                    </button>
+                      <Maximize2 size={15} />{uiText("見せる")}</button>
                     <button
                       className="text-button"
                       onClick={() => voice.speak(t.translated, t.target)}
                     >
-                      <Volume2 size={15} />
-                      読む
-                    </button>
+                      <Volume2 size={15} />{uiText("読む")}</button>
                     <button className="text-button" onClick={() => save(t)}>
-                      <Trash2 size={15} />
-                      削除
-                    </button>
+                      <Trash2 size={15} />{uiText("削除")}</button>
                   </div>
                 </article>
               ))
             ) : (
               <div className="saved-empty">
                 <Bookmark size={30} />
-                <p>また伝えたい言葉を、残しておこう。</p>
-                <small>訳文のしおりボタンから保存できます。</small>
+                <p>{uiText("また伝えたい言葉を、残しておこう。")}</p>
+                <small>{uiText("訳文のしおりボタンから保存できます。")}</small>
               </div>
             )}
           </>
         ) : (
           <>
             <label className="setting-row">
-              <span>
-                訳文を自動で読み上げる
-                <small>端末に対応する音声がある言語で使えます。</small>
+              <span>{uiText("訳文を自動で読み上げる")}<small>{uiText("端末に対応する音声がある言語で使えます。")}</small>
               </span>
               <input
                 type="checkbox"
@@ -1431,9 +1416,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
             </label>
             {remote && (
               <div className="setting-row">
-                <span>
-                  新着を端末に通知する
-                  <small>相手が送信を完了したとき、画面外でも名前つきで知らせます。</small>
+                <span>{uiText("新着を端末に通知する")}<small>{uiText("相手が送信を完了したとき、画面外でも名前つきで知らせます。")}</small>
                 </span>
                 <button
                   type="button"
@@ -1442,15 +1425,13 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                   disabled={notificationPermission === "granted"}
                 >
                   <Bell size={15} />
-                  {notificationPermission === "granted" ? "通知オン" : "オンにする"}
+                  {notificationPermission === "granted" ? uiText("通知オン") : uiText("オンにする")}
                 </button>
               </div>
             )}
             {!remote && (
               <label className="setting-row">
-                <span>
-                  会話をこの端末に残す
-                  <small>オフにすると、保存済みの会話履歴も削除します。</small>
+                <span>{uiText("会話をこの端末に残す")}<small>{uiText("オフにすると、保存済みの会話履歴も削除します。")}</small>
                 </span>
                 <input
                   type="checkbox"
@@ -1465,7 +1446,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                         localStorage.removeItem(HISTORY_KEY);
                       setKeepHistory(e.target.checked);
                     } catch {
-                      setNotice("保存設定を変更できませんでした。");
+                      setNotice(uiText("保存設定を変更できませんでした。"));
                     }
                   }}
                 />
@@ -1474,17 +1455,11 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
             <div className="privacy-note">
               <Shield size={20} />
               <div>
-                <h3>会話とプライバシー</h3>
-                <p>
-                  翻訳する文章は
-                  {engine === "openrouter"
-                    ? "OpenRouterと選択されたAI提供元"
-                    : "MyMemory"}
-                  へ送信されます。音声入力はブラウザの音声認識サービスを利用する場合があります。
-                </p>
-                <p>
-                  秘密の部屋はURLを知る人が参加できます。通信は暗号化されますが、エンドツーエンド暗号化ではありません。サーバーには会話履歴を保存しません。フレーズ帳と書き出したファイルは削除するまで残ります。
-                </p>
+                <h3>{uiText("会話とプライバシー")}</h3>
+                <p>{uiText("翻訳する文章は")}{engine === "openrouter"
+                    ? uiText("OpenRouterと選択されたAI提供元")
+                    : "MyMemory"}{uiText("へ送信されます。音声入力はブラウザの音声認識サービスを利用する場合があります。")}</p>
+                <p>{uiText("秘密の部屋はURLを知る人が参加できます。通信は暗号化されますが、エンドツーエンド暗号化ではありません。サーバーには会話履歴を保存しません。フレーズ帳と書き出したファイルは削除するまで残ります。")}</p>
               </div>
             </div>
             <button
@@ -1497,12 +1472,10 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                   localStorage.removeItem(HISTORY_KEY);
                 } catch {}
                 setPanel(null);
-                setNotice("この画面の会話を消去しました。");
+                setNotice(uiText("この画面の会話を消去しました。"));
               }}
             >
-              <Trash2 size={16} />
-              この画面の会話を消去
-            </button>
+              <Trash2 size={16} />{uiText("この画面の会話を消去")}</button>
           </>
         )}
       </dialog>
@@ -1519,14 +1492,14 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
               <div>
                 <button
                   className="icon-button"
-                  aria-label="相手に向けて180度回転"
+                  aria-label={uiText("相手に向けて180度回転")}
                   onClick={() => setFlipped((v) => !v)}
                 >
                   <RotateCcw size={20} />
                 </button>
                 <button
                   className="icon-button"
-                  aria-label="大きな表示を閉じる"
+                  aria-label={uiText("大きな表示を閉じる")}
                   onClick={() => setPresent(null)}
                 >
                   <X size={24} />
@@ -1544,9 +1517,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                   voice.speak(present.translated, present.target, true)
                 }
               >
-                <Volume2 size={18} />
-                ゆっくり読む
-              </button>
+                <Volume2 size={18} />{uiText("ゆっくり読む")}</button>
               {!remote && (
                 <button
                   className="translate-button"
@@ -1566,8 +1537,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                     setPresent(null);
                     reset();
                   }}
-                >
-                  返事をする · Reply <ArrowRight size={18} />
+                >{uiText("返事をする · Reply")}<ArrowRight size={18} />
                 </button>
               )}
             </div>
