@@ -295,3 +295,61 @@ to{opacity:1;transform:none}
 .honyaku .ui-language-switch button{flex:1 1 auto;padding:0 8px;white-space:nowrap}
 .honyaku .section-heading h2{min-width:0;flex-wrap:wrap}
 .honyaku .section-heading h2::before{flex:none}
+/* ===== 生命感レイヤー（電気・勢い・信号） ===== */
+.honyaku{--volt:#5fd4ff;--volt-soft:rgba(95,212,255,0.18);--shu:#ff5a3c;--midori:#5fe39a}
+.honyaku::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:linear-gradient(115deg,transparent 35%,rgba(232,201,106,0.10) 47%,rgba(255,240,190,0.2) 50%,rgba(232,201,106,0.10) 53%,transparent 65%);background-size:300% 300%;animation:hk-sweep 9s linear infinite;-webkit-mask-image:radial-gradient(circle at 50% 100%,transparent 17px,#000 18px,#000 21px,transparent 22px,transparent 25px,#000 26px,#000 29px,transparent 30px),radial-gradient(circle at 0 50%,transparent 17px,#000 18px,#000 21px,transparent 22px,transparent 25px,#000 26px,#000 29px,transparent 30px);-webkit-mask-size:56px 28px;mask-image:radial-gradient(circle at 50% 100%,transparent 17px,#000 18px,#000 21px,transparent 22px,transparent 25px,#000 26px,#000 29px,transparent 30px),radial-gradient(circle at 0 50%,transparent 17px,#000 18px,#000 21px,transparent 22px,transparent 25px,#000 26px,#000 29px,transparent 30px);mask-size:56px 28px}
+@keyframes hk-sweep{from{background-position:120% 120%}to{background-position:-20% -20%}}
+.honyaku .studio-body{position:relative;z-index:1}
+.honyaku[data-conversation-state="listening"]::before{background-image:linear-gradient(115deg,transparent 35%,rgba(95,212,255,0.14) 47%,rgba(200,245,255,0.26) 50%,rgba(95,212,255,0.14) 53%,transparent 65%);animation-duration:3.5s}
+.honyaku .wordmark::before{animation:hk-bolt 3.2s ease-in-out infinite}
+@keyframes hk-bolt{0%,100%{filter:drop-shadow(0 0 0 rgba(232,201,106,0))}45%{filter:drop-shadow(0 0 8px rgba(232,201,106,0.9))}50%{filter:drop-shadow(0 0 14px rgba(255,236,170,1)) brightness(1.35)}55%{filter:drop-shadow(0 0 6px rgba(232,201,106,0.8))}}
+.honyaku[data-conversation-state="listening"] .wordmark::before{background:linear-gradient(135deg,#d9f6ff,var(--volt));animation-duration:0.9s}
+.honyaku .language-bar::before,.honyaku .input-card::before,.honyaku .output-card::before{background:linear-gradient(180deg,var(--gold-deep),var(--gold-hi) 30%,#fff3c4 50%,var(--gold-hi) 70%,var(--gold-deep));background-size:100% 300%;animation:hk-current 4s linear infinite}
+@keyframes hk-current{from{background-position:0 100%}to{background-position:0 -200%}}
+.honyaku .input-card:has(textarea:focus)::before,.honyaku .input-card:has(textarea:not(:placeholder-shown))::before{animation:hk-current 1.2s linear infinite,hk-level 0.9s ease-in-out infinite;box-shadow:0 0 14px rgba(232,201,106,0.55)}
+@keyframes hk-level{0%,100%{width:3px}25%{width:6px}50%{width:4px}75%{width:7px}}
+.honyaku .input-card:has(textarea:focus){border-color:rgba(232,201,106,0.6)}
+.honyaku .voice-console-wave i{background:rgba(232,201,106,0.45);animation:hk-idle 2.4s ease-in-out infinite}
+.honyaku .voice-console-wave i:nth-child(2n){animation-delay:0.3s}
+.honyaku .voice-console-wave i:nth-child(3n){animation-delay:0.6s}
+.honyaku .voice-console-wave i:nth-child(5n){animation-delay:0.9s}
+@keyframes hk-idle{0%,100%{transform:scaleY(0.6)}50%{transform:scaleY(1.5)}}
+.honyaku .mic-button.listening{background:var(--volt);border-color:var(--volt);color:#03141c;box-shadow:0 0 24px rgba(95,212,255,0.55)}
+.honyaku .mic-button.listening svg{color:#03141c}
+.honyaku .mic-button.listening::before,.honyaku .mic-button.listening::after{border-color:var(--volt)}
+.honyaku .voice-console[data-state="starting"],.honyaku .voice-console[data-state="listening"],.honyaku .voice-console[data-state="speech"]{border-color:var(--volt);box-shadow:inset 3px 0 0 var(--volt),0 0 18px var(--volt-soft)}
+.honyaku .voice-console[data-state="listening"] .voice-console-wave i,.honyaku .voice-console[data-state="speech"] .voice-console-wave i,.honyaku .voice-console[data-state="starting"] .voice-console-wave i{background:var(--volt);animation-name:hk-bar}
+.honyaku .voice-console[data-state="listening"] .voice-console-label svg,.honyaku .voice-console[data-state="speech"] .voice-console-label svg{color:var(--volt)}
+.honyaku .voice-console-stop{background:var(--volt);color:#03141c}
+.honyaku[data-conversation-state="listening"] .input-card{border-color:rgba(95,212,255,0.55);box-shadow:0 0 0 1px rgba(95,212,255,0.25),0 0 40px -8px rgba(95,212,255,0.35)}
+.honyaku[data-conversation-state="listening"] .input-card::before{background:linear-gradient(180deg,#0a4b66,var(--volt) 30%,#e4faff 50%,var(--volt) 70%,#0a4b66);background-size:100% 300%;animation:hk-current 0.8s linear infinite,hk-level 0.5s ease-in-out infinite}
+.honyaku[data-conversation-state="translating"] .input-card::after,.honyaku[data-conversation-state="translating"] .output-card::after{content:"";position:absolute;left:0;right:0;top:-1px;height:2px;background:linear-gradient(90deg,transparent,var(--gold-hi),#fff6d2,var(--gold-hi),transparent);background-size:40% 100%;background-repeat:no-repeat;animation:hk-run 0.9s linear infinite}
+.honyaku[data-conversation-state="translating"] .input-card::after{top:auto;bottom:-1px}
+@keyframes hk-run{from{background-position:-40% 0}to{background-position:140% 0}}
+.honyaku[data-conversation-state="translating"] .translate-button{background:linear-gradient(110deg,var(--gold) 30%,#fff3c4 50%,var(--gold) 70%);background-size:250% 100%;animation:hk-shimmer 1s linear infinite;color:var(--bg);opacity:1}
+@keyframes hk-shimmer{from{background-position:150% 0}to{background-position:-50% 0}}
+@media (min-width:960px){.honyaku .workbench{position:relative}.honyaku[data-conversation-state="translating"] .workbench::after{content:"";position:absolute;top:50%;left:calc(50% - 30px);width:60px;height:2px;background:linear-gradient(90deg,transparent,var(--gold-hi),#fff6d2,transparent);background-size:50% 100%;background-repeat:no-repeat;animation:hk-run 0.6s linear infinite;filter:drop-shadow(0 0 6px var(--gold-hi))}}
+.honyaku .output-card.has-result .card-heading{animation:hk-rise 0.5s var(--ease) both}
+.honyaku .output-card.has-result .translated-text{animation:hk-ink 0.8s var(--ease) 0.15s both}
+@keyframes hk-ink{from{opacity:0;transform:translateY(12px);filter:blur(6px);letter-spacing:0.2em}to{opacity:1;transform:none;filter:none;letter-spacing:0.04em}}
+.honyaku .output-card.has-result .original-caption{animation:hk-rise 0.6s var(--ease) 0.45s both}
+.honyaku .output-card.has-result .translation-content{animation:none}
+.honyaku .output-card.has-result .result-tools button{animation:hk-rise 0.5s var(--ease) both}
+.honyaku .output-card.has-result .result-tools button:nth-child(1){animation-delay:0.6s}
+.honyaku .output-card.has-result .result-tools button:nth-child(2){animation-delay:0.68s}
+.honyaku .output-card.has-result .result-tools button:nth-child(3){animation-delay:0.76s}
+.honyaku .output-card.has-result .result-tools button:nth-child(4){animation-delay:0.84s}
+.honyaku .output-card.has-result .result-bottom{animation:hk-rise 0.5s var(--ease) 0.95s both}
+.honyaku .session-badge i,.honyaku .room-member i{background:var(--midori);box-shadow:0 0 8px var(--midori);animation:hk-blink 2s ease-in-out infinite}
+@keyframes hk-blink{0%,100%{opacity:1}50%{opacity:0.35}}
+.honyaku .voice-console[data-state="delivered"] .voice-console-signal{color:var(--midori)}
+.honyaku .voice-console[data-state="delivered"]{box-shadow:inset 3px 0 0 var(--midori)}
+.honyaku .voice-console[data-state="error"]{border-color:var(--shu);box-shadow:inset 3px 0 0 var(--shu)}
+.honyaku .voice-console[data-state="error"] .voice-console-label{color:var(--shu)}
+.honyaku .room-new-message{background:var(--shu) !important;border-color:var(--shu) !important;color:#fff !important;animation:hk-blink 1.2s ease-in-out infinite}
+.honyaku .studio-notice{border-left-color:var(--shu)}
+.honyaku .send-button:not(:disabled){box-shadow:0 0 0 0 rgba(232,201,106,0.6);animation:hk-call 1.8s ease-out infinite}
+@keyframes hk-call{0%{box-shadow:0 0 0 0 rgba(232,201,106,0.55)}100%{box-shadow:0 0 0 12px rgba(232,201,106,0)}}
+.honyaku .swap-button{animation:hk-bolt 4s ease-in-out infinite}
+.honyaku .swap-button:hover{transform:rotate(90deg)}
+@media (prefers-reduced-motion:reduce){.honyaku::before{animation:none}}
