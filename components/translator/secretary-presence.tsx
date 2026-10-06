@@ -30,6 +30,12 @@ export default function SecretaryPresence() {
 
   useEffect(() => {
     if (!visible) return;
+    // A direct Chinese invitation can load before the studio's first status event.
+    try {
+      const preference = new URLSearchParams(window.location.search).get("ui") || localStorage.getItem("honyaku.ui-language");
+      const uiLanguage: UiLanguage = preference === "zh" || (!preference && navigator.language.startsWith("zh")) ? "zh" : "ja";
+      setStatus((current) => ({ ...current, uiLanguage }));
+    } catch {}
     if (window.matchMedia("(max-width: 820px)").matches) setOpen(false);
     const receive = (event: Event) => {
       const detail = (event as CustomEvent<SecretaryDetail>).detail;
