@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node --import ./server/node_modules/tsx/dist/loader.mjs --test tests/translation.test.ts && npm run build --prefix server && node --test tests/room.test.mjs"
+    "test": "node --import ./server/node_modules/tsx/dist/loader.mjs --test tests/translation.test.ts tests/ui-language.test.ts && npm run build --prefix server && node --test tests/room.test.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

@@ -44,7 +44,8 @@ import {
 import { useRoomSocket } from "@/app/secret-room/[roomId]/use-room-socket";
 import type { RoomMessage } from "@/app/secret-room/[roomId]/types";
 import { useVoice } from "./use-voice";
-import { translateUi, type UiLanguage } from "./ui-language";
+import { UI_LANGUAGES, isUiLanguage, resolveUiLanguage, translateUi, type UiLanguage } from "./ui-language";
+import SecretaryPresence from "./secretary-presence";
 import "./studio.css";
 
 const SAVED_KEY = "honyaku.saved.v1";
@@ -80,6 +81,7 @@ function readTurns(key: string): Turn[] {
           .filter(
             (t: Turn) =>
               typeof t.id === "string" &&
+              (t.senderName === undefined || typeof t.senderName === "string") &&
               Number.isFinite(t.createdAt) &&
               ["you", "partner"].includes(t.speaker) &&
               isTranslation(t),
@@ -179,9 +181,8 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
     } catch {}
     const query = new URLSearchParams(window.location.search);
     try {
-      const preference = query.get("ui") || localStorage.getItem("honyaku.ui-language");
-      setUiLanguage(preference === "zh" || (!preference && navigator.language.startsWith("zh")) ? "zh" : "ja");
-    } catch { setUiLanguage(query.get("ui") === "zh" ? "zh" : "ja"); }
+      setUiLanguage(resolveUiLanguage(query, localStorage.getItem("honyaku.ui-language"), navigator.language));
+    } catch { setUiLanguage(resolveUiLanguage(query, null, navigator.language)); }
     const from = query.get("from"),
       to = query.get("to");
     if (isLanguage(from) && isLanguage(to) && from !== to) {
@@ -275,6 +276,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
           ...message.translation,
           id: message.id,
           createdAt: message.createdAt,
+          senderName: message.senderName,
           speaker: "partner",
         };
         addTurn(turn);
@@ -292,6 +294,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
         addTurn({
           id: message.id,
           createdAt: message.createdAt,
+          senderName: message.senderName,
           speaker: "partner",
           original: message.body,
           translated: message.body,
@@ -471,7 +474,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
   };
   const share = () => {
     if (!roomId) {
-      window.location.href = `/secret-room/${crypto.randomUUID()}?from=${myLanguage}&to=${otherLanguage}`;
+      window.location.href = `/secret-room/${crypto.randomUUID()}?from=${myLanguage}&to=${otherLanguage}&ui=${uiLanguage}`;
       return;
     }
     const url = new URL(
@@ -480,7 +483,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
     );
     url.searchParams.set("from", otherLanguage);
     url.searchParams.set("to", myLanguage);
-    url.searchParams.set("ui", otherLanguage === "zh" ? "zh" : uiLanguage);
+    url.searchParams.set("ui", isUiLanguage(otherLanguage) ? otherLanguage : uiLanguage);
     void copy(url.toString());
   };
   const exportTurns = () => {
@@ -661,7 +664,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
   ]);
 
   return (
-    <main className="honyaku" lang={uiLanguage === "zh" ? "zh-CN" : "ja"} data-ui-language={uiLanguage} data-conversation-state={busy ? "translating" : voice.listening ? "listening" : result ? "delivered" : "idle"}>
+    <main className="honyaku" lang={uiLanguage === "zh" ? "zh-CN" : uiLanguage} data-ui-language={uiLanguage} data-conversation-state={busy ? "translating" : voice.listening ? "listening" : result ? "delivered" : "idle"}>
       <aside className="studio-rail">
         <Link href="/" className="brand-mark" aria-label={uiText("翻訳王 ホーム")}>
           <Languages size={24} />
@@ -715,10 +718,11 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
               {remote ? uiText("招待リンクをコピー") : uiText("離れた相手と話す")}
               <ArrowRight size={15} />
             </button>
-            <div className="ui-language-switch" role="group" aria-label="画面の表示言語 / 界面语言">
-              <Globe2 size={15} aria-hidden="true" />
-              <button type="button" lang="ja" aria-pressed={uiLanguage === "ja"} onClick={() => changeUiLanguage("ja")}>日本語</button>
-              <button type="button" lang="zh-CN" aria-pressed={uiLanguage === "zh"} onClick={() => changeUiLanguage("zh")}>中文</button>
+            <div className="ui-language-switch" role="group" aria-label={uiText("画面の表示言語")}>
+              <span className="ui-language-label"><Globe2 size={15} aria-hidden="true" />{uiText("画面の表示言語")}</span>
+              {UI_LANGUAGES.map(({ value, label }) => (
+                <button key={value} type="button" lang={value} aria-pressed={uiLanguage === value} onClick={() => changeUiLanguage(value)}>{label}</button>
+              ))}
             </div>
           </div>
         </header>
@@ -882,6 +886,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
               <span>{uiText("それぞれの母語で")}<br />{uiText("そのまま、話そう。")}</span>
             </div>
           </section>
+          <SecretaryPresence />
           {notice && (
             <div className="studio-notice" role="status">
               <span>{uiText(notice)}</span>
@@ -1058,19 +1063,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                     ) : (
                       <Sparkles size={17} />
                     )}
-                    {busy
-                      ? uiText("ことばを翻訳中")
-                      : uiLanguage === "zh"
-                        ? "翻译"
-                      : myLanguage === "vi"
-                        ? uiText("Dịch · 翻訳")
-                        : myLanguage === "km"
-                          ? uiText("បកប្រែ · 翻訳")
-                          : myLanguage === "zh"
-                            ? uiText("翻译 · 翻訳")
-                          : myLanguage === "en"
-                            ? "Translate"
-                            : uiText("翻訳する")}
+                    {busy ? uiText("ことばを翻訳中") : uiText("翻訳する")}
                     {!busy && <ArrowRight size={17} />}
                   </button>
                 </div>
@@ -1194,11 +1187,8 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                           ? uiText("中継済み")
                           : socket.members.length < 2
                             ? uiText("相手の入室待ち")
-                            : myLanguage === "vi"
-                              ? uiText("Gửi · 送る")
-                              : myLanguage === "km"
-                                ? uiText("ផ្ញើ · 送る")
-                                : uiText("相手に送る")}
+                            : uiText("相手に送る")}
+
                       </button>
                     )}
                   </div>
@@ -1284,7 +1274,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                     <div className="turn-copy">
                       <div className="turn-meta">
                         <strong>
-                          {turn.speaker === "you" ? uiText("あなた") : uiText("相手")}
+                          {turn.senderName || (turn.speaker === "you" ? memberName || uiText("あなた") : uiText("相手"))}
                         </strong>
                         <span>
                           {LANGUAGES[turn.source].native} →{" "}
@@ -1292,11 +1282,16 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                         </span>
                         <time>{time(turn.createdAt)}</time>
                       </div>
-                      <p lang={turn.source}>{turn.original}</p>
                       <p lang={turn.target} className="turn-translation">
-                        {turn.provider === "identity" && <small>{uiText("原文 ·")}</small>}
+                        <span className="message-caption">{uiText(turn.provider === "identity" ? "原文" : "訳文")}</span>
                         {turn.translated}
                       </p>
+                      {turn.provider !== "identity" && (
+                        <p lang={turn.source} className="turn-original">
+                          <span className="message-caption">{uiText("原文")}</span>
+                          {turn.original}
+                        </p>
+                      )}
                     </div>
                     <button
                       className="icon-button"

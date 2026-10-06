@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { translateUi, type UiLanguage } from "./ui-language";
+import { resolveUiLanguage, translateUi, type UiLanguage } from "./ui-language";
 import "./secretary-presence.css";
 
 type SecretaryDetail = {
@@ -32,8 +32,7 @@ export default function SecretaryPresence() {
     if (!visible) return;
     // A direct Chinese invitation can load before the studio's first status event.
     try {
-      const preference = new URLSearchParams(window.location.search).get("ui") || localStorage.getItem("honyaku.ui-language");
-      const uiLanguage: UiLanguage = preference === "zh" || (!preference && navigator.language.startsWith("zh")) ? "zh" : "ja";
+      const uiLanguage = resolveUiLanguage(new URLSearchParams(window.location.search), localStorage.getItem("honyaku.ui-language"), navigator.language);
       setStatus((current) => ({ ...current, uiLanguage }));
     } catch {}
     if (window.matchMedia("(max-width: 820px)").matches) setOpen(false);
@@ -58,7 +57,7 @@ export default function SecretaryPresence() {
         className="secretary-core"
         type="button"
         aria-label={
-          open ? uiText("状態表示を小さくする") : `${status.uiLanguage === "zh" ? "打开状态提示。" : "状態表示を開く。"}${uiText(status.message)}`
+          open ? uiText("状態表示を小さくする") : `${uiText("状態表示を開く。")}${uiText(status.message)}`
         }
         onClick={() => setOpen((value) => !value)}
       >
@@ -71,11 +70,12 @@ export default function SecretaryPresence() {
         )}
       </button>
 
+      {!open && <p className="secretary-summary" role="status">{uiText(status.message)}</p>}
       <div className="secretary-card" aria-live="polite" aria-hidden={!open}>
         <div className="secretary-kicker">
           <i />
-          {status.uiLanguage === "zh" ? "语言助手" : "ことばの秘書"}
-          <span>{status.uiLanguage === "zh" ? "状态" : "状態"}</span>
+          {uiText("ことばの秘書")}
+          <span>{uiText("状態")}</span>
         </div>
         <p key={status.message}>{uiText(status.message)}</p>
         <button

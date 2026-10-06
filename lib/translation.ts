@@ -38,6 +38,7 @@ export type Translation = {
 };
 export type Turn = Translation & {
   id: string;
+  senderName?: string;
   createdAt: number;
   speaker: "you" | "partner";
   backTranslation?: string;
