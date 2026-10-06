@@ -610,6 +610,8 @@ export function translateUi(language: UiLanguage, text: string): string {
   if (Object.hasOwn(dictionary, text)) return dictionary[text];
   const words = DYNAMIC[language];
   return text
+    .replace(/さんとして入室します。/g, language === "zh" ? "，正在进入房间。" : language === "vi" ? " — đang vào phòng." : " — កំពុងចូលបន្ទប់។")
+    .replace(/さんからメッセージが届きました。/g, words.received)
     .replace(/さんが入室しました。/g, language === "zh" ? "进入了房间。" : language === "vi" ? " đã vào phòng." : " បានចូលបន្ទប់។")
     .replace(/さんが退室しました。/g, language === "zh" ? "离开了房间。" : language === "vi" ? " đã rời phòng." : " បានចាកចេញពីបន្ទប់។")
     .replace(/さんから新着メッセージが届きました。/g, words.received)

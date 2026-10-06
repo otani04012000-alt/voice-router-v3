@@ -232,12 +232,12 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
   }, [turns.length]);
   useEffect(() => {
     document.title = unreadCount
-      ? `(${unreadCount}) 翻訳王 | 新着メッセージ`
-      : "翻訳王 | ことばを越えて。";
+      ? `(${unreadCount}) ${translateUi(uiLanguage, "翻訳王")} | ${translateUi(uiLanguage, "新着")}`
+      : `${translateUi(uiLanguage, "翻訳王")} | ${translateUi(uiLanguage, "ことばを越えて。")}`;
     return () => {
       document.title = "翻訳王 | ことばを越えて。";
     };
-  }, [unreadCount]);
+  }, [unreadCount, uiLanguage]);
 
   const addTurn = useCallback(
     (turn: Turn) =>
@@ -266,8 +266,8 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
         "Notification" in window &&
         Notification.permission === "granted"
       ) {
-        new Notification("翻訳王 | 新着メッセージ", {
-          body: `${message.senderName}さんからメッセージが届きました。`,
+        new Notification(`${translateUi(uiLanguage, "翻訳王")} | ${translateUi(uiLanguage, "新着")}`, {
+          body: translateUi(uiLanguage, `${message.senderName}さんからメッセージが届きました。`),
           tag: `honyaku-${message.id}`,
         });
       }
@@ -305,7 +305,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
         });
       }
     },
-    [memberId, addTurn, autoSpeak, myLanguage, otherLanguage, voice.speak],
+    [memberId, addTurn, autoSpeak, myLanguage, otherLanguage, voice.speak, uiLanguage],
   );
   const socket = useRoomSocket({
     enabled: remote && Boolean(memberId) && Boolean(memberName),
