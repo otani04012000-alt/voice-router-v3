@@ -898,8 +898,11 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                 <div className="input-meta">
                   <span>
                     {voice.listening
-                      ? voice.interim ||
-                        uiText("聞いています。話し終わったら停止してください。")
+                      ? voice.micPhase === "starting" ? uiText("マイクを準備中")
+                        : voice.micPhase === "stopping" ? uiText("マイクを停止中")
+                        : voice.micPhase === "stopped" ? uiText("マイク停止済み")
+                        : voice.micPhase === "error" ? uiText("マイクを確認してください")
+                        : voice.interim || uiText("聞いています。話し終わったら停止してください。")
                       : uiText("⌘ / Ctrl ＋ Enter で翻訳")}
                   </span>
                   <span>

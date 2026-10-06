@@ -18,7 +18,7 @@ export default function SecretaryPresence({ phase, busy, speaking, delivered, ui
   const active = ["starting", "listening", "speech", "stopping"].includes(phase);
   const micLabel = phase === "starting" ? "マイクを準備中" : phase === "listening" ? "マイク受付中" : phase === "speech" ? "声を聞き取っています" : phase === "stopping" ? "マイクを停止中" : phase === "stopped" ? "マイク停止済み" : phase === "error" ? "マイクを確認してください" : "マイクはオフ";
   const state = active || phase === "error" ? phase : busy ? "translating" : speaking ? "speaking" : delivered ? "delivered" : phase;
-  const detail = active ? (phase === "stopping" ? "音声入力の終了を待っています" : "話し終えたら停止できます") : busy ? "ことばを翻訳しています。" : speaking ? "訳文を読み上げています" : delivered ? "訳文ができました" : phase === "stopped" ? "もう声は受け付けていません" : "声でも文字でも、あなたのことばで";
+  const detail = phase === "error" ? "音声入力を続けられませんでした。文字入力も使えます。" : active ? (phase === "stopping" ? "音声入力の終了を待っています" : "話し終えたら停止できます") : busy ? "ことばを翻訳しています。" : speaking ? "訳文を読み上げています" : delivered ? "訳文ができました" : phase === "stopped" ? "もう声は受け付けていません" : "声でも文字でも、あなたのことばで";
   return (
     <aside className="voice-console" data-state={state} aria-label={uiText("音声入力の状態")}>
       <div className="voice-console-copy" role="status" aria-live="polite" aria-atomic="true">
