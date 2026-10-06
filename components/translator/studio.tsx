@@ -556,112 +556,6 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
     setUnreadCount(0);
     end.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   };
-  useEffect(() => {
-    const handleAction = (event: Event) => {
-      const action = (event as CustomEvent<{ action?: string }>).detail?.action;
-      if (action === "read") markMessagesRead();
-      else if (action === "notifications") void requestNotifications();
-      else if (action === "join")
-        document.getElementById("room-member-name")?.focus();
-      else {
-        textarea.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-        textarea.current?.focus();
-      }
-    };
-    window.addEventListener("honyaku:secretary-action", handleAction);
-    return () =>
-      window.removeEventListener("honyaku:secretary-action", handleAction);
-    // The listener only calls state setters and stable DOM refs.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  useEffect(() => {
-    let detail: {
-      message: string;
-      label: string;
-      action: "focus" | "join" | "read" | "notifications";
-      badge?: number;
-      tone: "idle" | "active" | "alert" | "error";
-    };
-    if (remote && !memberName)
-      detail = {
-        message: "表示名を入力すると、安全に入室できます。",
-        label: "名前を入力",
-        action: "join",
-        tone: "idle",
-      };
-    else if (unreadCount)
-      detail = {
-        message: `${unreadCount}件の新着メッセージがあります。`,
-        label: "新着を見る",
-        action: "read",
-        badge: unreadCount,
-        tone: "alert",
-      };
-    else if (voice.listening)
-      detail = {
-        message: "声を聞いています。話し終えたら停止してください。",
-        label: "入力を確認",
-        action: "focus",
-        tone: "active",
-      };
-    else if (busy)
-      detail = {
-        message: "ことばを翻訳しています。",
-        label: "入力を確認",
-        action: "focus",
-        tone: "active",
-      };
-    else if (remote && socket.connectionState === "error")
-      detail = {
-        message: "部屋への接続を確認できません。再接続しています。",
-        label: "入力を確認",
-        action: "focus",
-        tone: "error",
-      };
-    else if (typing)
-      detail = {
-        message: `${typingName || "相手"}さんが入力しています。`,
-        label: "会話を見る",
-        action: "read",
-        tone: "active",
-      };
-    else if (
-      remote &&
-      socket.connectionState === "connected" &&
-      notificationPermission !== "granted"
-    )
-      detail = {
-        message: `${socket.members.map((member) => member.name).join("、")}が入室中です。`,
-        label: "新着通知をオン",
-        action: "notifications",
-        tone: "idle",
-      };
-    else
-      detail = {
-        message:
-          remote && socket.connectionState === "connected"
-            ? `${socket.members.map((member) => member.name).join("、")}が入室中です。`
-            : "入力の準備ができています。",
-        label: "入力へ",
-        action: "focus",
-        tone: "idle",
-      };
-    window.dispatchEvent(
-      new CustomEvent("honyaku:secretary-status", { detail: { ...detail, uiLanguage } }),
-    );
-  }, [
-    uiLanguage,
-    busy,
-    memberName,
-    notificationPermission,
-    remote,
-    socket.connectionState,
-    socket.members,
-    typing,
-    typingName,
-    unreadCount,
-    voice.listening,
-  ]);
 
   return (
     <main className="honyaku" lang={uiLanguage === "zh" ? "zh-CN" : uiLanguage} data-ui-language={uiLanguage} data-conversation-state={busy ? "translating" : voice.listening ? "listening" : result ? "delivered" : "idle"}>
@@ -806,7 +700,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                   ? uiText("ふたりだけの、秘密の部屋")
                   : uiText("あなたと、目の前の誰かのために")}
               </p>
-              <h1>{uiText("ことばの向こうに、")}<em>{uiText("人がいる。")}</em>
+              <h1><span className="title-phrase">{uiText("ことばの向こうに、")}</span><em>{uiText("人がいる。")}</em>
               </h1>
               <p className="intro-description">
                 {remote
@@ -886,7 +780,6 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
               <span>{uiText("それぞれの母語で")}<br />{uiText("そのまま、話そう。")}</span>
             </div>
           </section>
-          <SecretaryPresence />
           {notice && (
             <div className="studio-notice" role="status">
               <span>{uiText(notice)}</span>
@@ -1038,10 +931,10 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                   <button
                     className={`mic-button ${voice.listening ? "listening" : ""}`}
                     type="button"
-                    disabled={busy || !voice.supported}
+                    disabled={(busy && !voice.listening) || !voice.supported || voice.micPhase === "stopping"}
                     onClick={() => voice.start(source)}
                   >
-                    {voice.listening ? (
+                    {voice.micPhase === "speech" ? (
                       <span className="live-voice-bars" aria-hidden="true">
                         <i />
                         <i />
@@ -1051,7 +944,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                     ) : (
                       <Mic size={18} />
                     )}
-                    {voice.listening ? uiText("音声を停止") : uiText("声で入力")}
+                    {voice.micPhase === "stopping" ? uiText("マイクを停止中") : voice.listening ? uiText("音声を停止") : uiText("声で入力")}
                   </button>
                   <button
                     className="translate-button"
@@ -1067,6 +960,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                     {!busy && <ArrowRight size={17} />}
                   </button>
                 </div>
+                <SecretaryPresence phase={voice.micPhase} busy={busy} speaking={voice.speaking} delivered={Boolean(result)} uiLanguage={uiLanguage} onStop={voice.stop} />
               </form>
             </section>
             <section
@@ -1130,7 +1024,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                       aria-label={uiText("訳文をコピー")}
                       onClick={() => void copy(result.translated)}
                     >
-                      <Copy size={17} />
+                      <Copy size={17} />{uiText("コピー")}
                     </button>
                     <button
                       aria-label={savedResult ? uiText("保存を解除") : uiText("フレーズを保存")}
@@ -1140,7 +1034,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                         <Check size={17} />
                       ) : (
                         <Bookmark size={17} />
-                      )}
+                      )}{savedResult ? uiText("保存済み") : uiText("保存")}
                     </button>
                     <button
                       onClick={() => {

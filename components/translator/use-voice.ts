@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { microphoneTransition, type MicrophonePhase } from "./microphone-state";
 import { LANGUAGES, type Language } from "@/lib/translation";
 
 type Recognition = {
@@ -20,6 +21,11 @@ type Recognition = {
     | null;
   onerror: ((e: { error: string }) => void) | null;
   onend: (() => void) | null;
+  onstart: (() => void) | null;
+  onaudiostart: (() => void) | null;
+  onaudioend: (() => void) | null;
+  onspeechstart: (() => void) | null;
+  onspeechend: (() => void) | null;
   start: () => void;
   stop: () => void;
   abort: () => void;
@@ -34,6 +40,7 @@ export function useVoice(
 ) {
   const [supported, setSupported] = useState(false);
   const [listening, setListening] = useState(false);
+  const [micPhase, setMicPhase] = useState<MicrophonePhase>("off");
   const [speaking, setSpeaking] = useState(false);
   const [interim, setInterim] = useState("");
   const recognition = useRef<Recognition | null>(null);
@@ -53,16 +60,21 @@ export function useVoice(
         r.onresult = null;
         r.onend = null;
         r.onerror = null;
+        r.onstart = r.onaudiostart = r.onaudioend = r.onspeechstart = r.onspeechend = null;
         r.abort();
       }
       window.speechSynthesis?.cancel();
     };
   }, []);
   const stop = useCallback(() => {
-    recognition.current?.stop();
+    if (recognition.current) {
+      setMicPhase((phase) => microphoneTransition(phase, "stop"));
+      recognition.current.stop();
+    }
   }, []);
   const start = useCallback((language: Language) => {
     if (recognition.current) {
+      setMicPhase((phase) => microphoneTransition(phase, "stop"));
       recognition.current.stop();
       return;
     }
@@ -80,7 +92,15 @@ export function useVoice(
     r.lang = LANGUAGES[language].locale;
     r.continuous = false;
     r.interimResults = true;
+    const update = (event: Parameters<typeof microphoneTransition>[1]) => {
+      if (recognition.current === r) setMicPhase((phase) => microphoneTransition(phase, event));
+    };
+    r.onstart = r.onaudiostart = () => update("ready");
+    r.onspeechstart = () => update("speech");
+    r.onspeechend = () => update("quiet");
+    r.onaudioend = () => update("audioend");
     r.onresult = (e) => {
+      if (recognition.current !== r) return;
       let final = "",
         draft = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -90,7 +110,9 @@ export function useVoice(
       setInterim(draft);
       if (final) textCallback.current(final);
     };
-    r.onerror = (e) =>
+    r.onerror = (e) => {
+      if (recognition.current !== r) return;
+      update("error");
       noticeCallback.current(
         e.error === "not-allowed"
           ? "マイクの利用が許可されていません。ブラウザの設定を確認してください。"
@@ -100,18 +122,24 @@ export function useVoice(
               ? "この端末では選択した言語の音声入力に対応していません。文字で入力してください。"
               : "音声入力を続けられませんでした。文字入力も使えます。",
       );
+    };
     r.onend = () => {
-      if (recognition.current === r) recognition.current = null;
+      if (recognition.current !== r) return;
+      update("end");
+      recognition.current = null;
       setListening(false);
       setInterim("");
     };
     recognition.current = r;
+    setInterim("");
+    setMicPhase("starting");
     try {
       r.start();
       setListening(true);
     } catch {
       recognition.current = null;
       setListening(false);
+      setMicPhase("error");
       noticeCallback.current("マイクを開始できませんでした。");
     }
   }, []);
@@ -150,6 +178,7 @@ export function useVoice(
   }, []);
   return {
     supported,
+    micPhase,
     listening,
     speaking,
     interim,
