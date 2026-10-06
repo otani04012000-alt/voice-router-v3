@@ -106,7 +106,8 @@ const ws = spawn(process.execPath, ["server/dist/index.js"], {
       });
     });
     await page.goto("http://127.0.0.1:3320");
-    await page.getByRole("heading", { name: /ことばの向こうに/ }).waitFor();
+    await page.getByLabel("翻訳する文章").waitFor();
+    await page.getByLabel("相手の言語").selectOption("vi");
     await page.evaluate(() => document.fonts.ready);
     assert.equal(
       await page
@@ -169,7 +170,7 @@ const ws = spawn(process.execPath, ["server/dist/index.js"], {
     fail = false;
     await page.setViewportSize({ width: 390, height: 844 });
     await page.reload();
-    await page.getByRole("heading", { name: /ことばの向こうに/ }).waitFor();
+    await page.getByLabel("翻訳する文章").waitFor();
     await page.evaluate(() => document.fonts.ready);
     assert.ok(
       await page.evaluate(
