@@ -8,7 +8,6 @@ import {
   Bell,
   Bookmark,
   Check,
-  ChevronRight,
   Copy,
   Download,
   Globe2,
@@ -51,28 +50,7 @@ import "./studio.css";
 const SAVED_KEY = "honyaku.saved.v1";
 const HISTORY_KEY = "honyaku.history.v1";
 const ROOM_NAME_KEY = "honyaku.room.name.v1";
-const phrases = [
-  {
-    category: "出会い",
-    text: "会えてうれしいです。ゆっくり話してもらえますか？",
-    icon: "✦",
-  },
-  {
-    category: "食事",
-    text: "辛くしないでください。おすすめは何ですか？",
-    icon: "◒",
-  },
-  {
-    category: "移動",
-    text: "ここまで行きたいです。料金はいくらですか？",
-    icon: "↗",
-  },
-  {
-    category: "気持ち",
-    text: "うまく言えないけれど、ありがとうと伝えたいです。",
-    icon: "♡",
-  },
-];
+
 function readTurns(key: string): Turn[] {
   try {
     const data = JSON.parse(localStorage.getItem(key) || "[]");
@@ -1121,14 +1099,6 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
           </div>
           <div className="under-workbench">
             <span>
-              <Shield size={13} />
-              {remote
-                ? uiText("部屋の履歴はこの画面を閉じると消えます")
-                : keepHistory
-                  ? uiText("履歴はこの端末に保存中")
-                  : uiText("履歴はこの画面の中だけ")}
-            </span>
-            <span>
               {engine === "openrouter"
                 ? uiText("AI翻訳 · 伝え方の調整に対応")
                 : engine === "mymemory"
@@ -1139,44 +1109,22 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
               <i className={engine === "unavailable" ? "offline" : ""} />
             </span>
           </div>
-          <section className="conversation-section">
-            <div className="section-heading">
-              <h2>
-                {turns.length ? uiText("ふたりの会話") : uiText("はじめのひとこと")}
-                <span>
-                  {turns.length
-                    ? uiText(`${turns.length}件`)
-                    : uiText("言葉に迷ったら、ここから。")}
-                </span>
-              </h2>
-              {turns.length > 0 && (
+          {turns.length > 0 && (
+            <section className="conversation-section">
+              <div className="section-heading">
+                <h2>{uiText("ふたりの会話")}<span>{uiText(`${turns.length}件`)}</span></h2>
                 <button className="text-button" onClick={exportTurns}>
-                  <Download size={15} />{uiText("書き出す")}</button>
-              )}
-            </div>
-            {turns.length ? (
-              <div
-                className="conversation-log"
-                role="log"
-                aria-label={uiText("会話の履歴")}
-              >
+                  <Download size={15} />{uiText("書き出す")}
+                </button>
+              </div>
+              <div className="conversation-log" role="log" aria-label={uiText("会話の履歴")}>
                 {turns.map((turn) => (
-                  <article
-                    className={`conversation-turn ${turn.speaker}`}
-                    key={turn.id}
-                  >
-                    <div className="turn-avatar">
-                      {LANGUAGES[turn.source].short}
-                    </div>
+                  <article className={`conversation-turn ${turn.speaker}`} key={turn.id}>
+                    <div className="turn-avatar">{LANGUAGES[turn.source].short}</div>
                     <div className="turn-copy">
                       <div className="turn-meta">
-                        <strong>
-                          {turn.senderName || (turn.speaker === "you" ? memberName || uiText("あなた") : uiText("相手"))}
-                        </strong>
-                        <span>
-                          {LANGUAGES[turn.source].native} →{" "}
-                          {LANGUAGES[turn.target].native}
-                        </span>
+                        <strong>{turn.senderName || (turn.speaker === "you" ? memberName || uiText("あなた") : uiText("相手"))}</strong>
+                        <span>{LANGUAGES[turn.source].native} → {LANGUAGES[turn.target].native}</span>
                         <time>{time(turn.createdAt)}</time>
                       </div>
                       <p lang={turn.target} className="turn-translation">
@@ -1190,55 +1138,16 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                         </p>
                       )}
                     </div>
-                    <button
-                      className="icon-button"
-                      aria-label={uiText("この会話を大きく表示")}
-                      onClick={() => setPresent(turn)}
-                    >
+                    <button className="icon-button" aria-label={uiText("この会話を大きく表示")} onClick={() => setPresent(turn)}>
                       <Maximize2 size={15} />
                     </button>
                   </article>
                 ))}
-                {typing && (
-                  <p className="typing-indicator">
-                    {typingName || uiText("相手")}{uiText("さんが入力しています…")}</p>
-                )}
+                {typing && <p className="typing-indicator">{typingName || uiText("相手")}{uiText("さんが入力しています…")}</p>}
                 <div ref={end} />
               </div>
-            ) : (
-              <div className="phrase-grid">
-                {phrases.map((p) => (
-                  <button
-                    className="phrase-card"
-                    key={uiText(p.category)}
-                    disabled={busy || voice.listening}
-                    onClick={() => {
-                      setSpeaker("you");
-                      setMyLanguage(uiLanguage);
-                      if (otherLanguage === uiLanguage) setOtherLanguage(uiLanguage === "ja" ? "zh" : "ja");
-                      setText(uiText(p.text));
-                      setResult(null);
-                      textarea.current?.focus();
-                    }}
-                  >
-                    <span className="phrase-category">
-                      <i>{p.icon}</i>
-                      {uiText(p.category)}
-                      <ChevronRight size={13} />
-                    </span>
-                    <span>{uiText(p.text)}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </section>
-          <footer className="studio-footer">
-            <span>{uiText("翻訳王")}<i>／</i> OTANI KIKAKU
-            </span>
-            <span>{uiText("離れていても、ことばはそばに。")}</span>
-            <Link href="/world-tree">{uiText("世界樹")}<ArrowRight size={12} />
-            </Link>
-          </footer>
+            </section>
+          )}
         </div>
       </div>
       <dialog
