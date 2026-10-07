@@ -3,7 +3,7 @@
 import { useEffect, useRef, type RefObject } from "react";
 import type { VoiceSignal } from "./use-voice";
 
-export type RouterVisualState = "idle" | "listening" | "translating" | "delivered";
+export type RouterVisualState = "idle" | "listening" | "ending" | "stopped" | "translating" | "delivered";
 
 type Props = {
   state: RouterVisualState;
@@ -76,6 +76,8 @@ export default function VoiceRouterCore({
 
     const palette = () => {
       if (state === "listening") return { main: "95,212,255", hot: "219,248,255" };
+      if (state === "ending") return { main: "255,174,72", hot: "255,238,191" };
+      if (state === "stopped") return { main: "255,105,82", hot: "255,221,210" };
       if (state === "translating") return { main: "226,178,255", hot: "255,235,187" };
       if (state === "delivered") return { main: "95,227,154", hot: "232,255,220" };
       return { main: "232,201,106", hot: "255,242,194" };
@@ -137,7 +139,8 @@ export default function VoiceRouterCore({
       const live = signal.current;
       const active = state === "listening";
       const idleBreath = 0.035 + (Math.sin(now * 0.0017) + 1) * 0.018;
-      const targetEnergy = active ? Math.max(live.level, idleBreath) : state === "translating" ? 0.32 : state === "delivered" ? 0.13 : idleBreath;
+      const closing = state === "ending" ? Math.min(1, elapsed / 1350) : 0;
+      const targetEnergy = active ? Math.max(live.level, idleBreath) : state === "ending" ? 0.2 * (1 - closing) : state === "stopped" ? 0.015 : state === "translating" ? 0.32 : state === "delivered" ? 0.13 : idleBreath;
       energy += (targetEnergy - energy) * 0.16;
       low += ((active ? live.low : idleBreath * 0.7) - low) * 0.13;
       mid += ((active ? live.mid : idleBreath) - mid) * 0.13;
@@ -224,7 +227,8 @@ export default function VoiceRouterCore({
       context.restore();
 
       const lobes = state === "translating" ? 10 : state === "delivered" ? 8 : 7;
-      const radius = coreRadius * (1 + energy * 0.34 + Math.min(0.16, live.peak * 0.14));
+      const closeScale = state === "ending" ? 1 - closing * 0.48 : state === "stopped" ? 0.52 : 1;
+      const radius = coreRadius * closeScale * (1 + energy * 0.34 + Math.min(0.16, live.peak * 0.14));
       context.beginPath();
       for (let index = 0; index <= 96; index++) {
         const angle = (index / 96) * TAU;
@@ -269,6 +273,30 @@ export default function VoiceRouterCore({
           context.fillStyle = `rgba(${main},${0.3 + band * 0.7})`;
           context.fillRect(x, centerY + coreRadius + 17 - barHeight / 2, 1.5, barHeight);
         }
+      }
+
+      if (state === "ending") {
+        context.beginPath();
+        context.arc(centerX, centerY, coreRadius + 18, -Math.PI / 2, -Math.PI / 2 + TAU * (1 - closing));
+        context.strokeStyle = `rgba(${main},${0.95 - closing * 0.35})`;
+        context.lineWidth = 4;
+        context.lineCap = "round";
+        context.shadowColor = `rgba(${main},0.9)`;
+        context.shadowBlur = 16;
+        context.stroke();
+        context.shadowBlur = 0;
+        context.lineCap = "butt";
+      }
+
+      if (state === "stopped") {
+        context.strokeStyle = `rgba(${main},0.9)`;
+        context.lineWidth = 2;
+        context.beginPath();
+        context.moveTo(centerX - 9, centerY - 9);
+        context.lineTo(centerX + 9, centerY + 9);
+        context.moveTo(centerX + 9, centerY - 9);
+        context.lineTo(centerX - 9, centerY + 9);
+        context.stroke();
       }
 
       if (state === "delivered") {

@@ -482,3 +482,27 @@ to{opacity:1;transform:none}
 @keyframes hk-gold-veil{0%{opacity:.42;transform:translate3d(-6%,-3%,0) rotate(-2deg)}50%{opacity:.88}100%{opacity:.52;transform:translate3d(7%,4%,0) rotate(3deg)}}
 @media (max-width:600px){.honyaku .studio-body::before{opacity:.5;background-size:137px 121px,173px 151px,211px 163px,193px 227px,251px 187px,223px 149px,157px 199px}.honyaku .studio-body::after{opacity:.62}}
 @media (prefers-reduced-motion:reduce){.honyaku .studio-body::before,.honyaku .studio-body::after{animation:none}}
+
+/* ===== マイク終了予告 — 無音検知から切断までを目で追える ===== */
+.honyaku .mic-cutoff-orbit{position:relative;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;color:#ffae48;filter:drop-shadow(0 0 7px rgba(255,174,72,.75));animation:hk-mic-orbit-close 1.35s linear forwards}
+.honyaku .mic-cutoff-orbit svg{position:absolute;inset:0;width:30px;height:30px;transform:rotate(-90deg)}
+.honyaku .mic-cutoff-orbit circle{fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-dasharray:75.4;stroke-dashoffset:0;animation:hk-mic-countdown 1.35s linear forwards}
+.honyaku .mic-cutoff-orbit i{position:relative;width:6px;height:6px;border-radius:50%;background:#ffae48;box-shadow:0 0 10px #ffae48;animation:hk-cutoff-dot .45s ease-in-out infinite alternate}
+@keyframes hk-mic-countdown{to{stroke-dashoffset:72}}
+@keyframes hk-mic-orbit-close{0%{color:#5fd4ff;transform:scale(1)}55%{color:#ffae48;transform:scale(.86)}100%{color:#ff6952;transform:scale(.62)}}
+@keyframes hk-cutoff-dot{to{opacity:.35;transform:scale(.72)}}
+.honyaku .voice-console[data-state="ending"]{border-color:#ffae48;box-shadow:inset 4px 0 0 #ffae48,0 0 22px rgba(255,174,72,.18)}
+.honyaku .voice-console[data-state="ending"] .voice-console-label,.honyaku .voice-console[data-state="ending"] .voice-console-detail{color:#ffd08b}
+.honyaku .voice-console[data-state="stopping"]{border-color:#ff795f;box-shadow:inset 4px 0 0 #ff795f,0 0 22px rgba(255,105,82,.2)}
+.honyaku .voice-console[data-state="stopped"]{border-color:rgba(255,105,82,.5);box-shadow:inset 4px 0 0 #ff6952}
+.honyaku .voice-console[data-state="stopped"] .voice-console-label{color:#ff9b86}
+.honyaku .mic-button.mic-ending{border-color:#ffae48;color:#ffd08b;background:rgba(255,174,72,.14);box-shadow:0 0 24px rgba(255,174,72,.22);animation:hk-mic-closing .68s ease-in-out infinite alternate}
+.honyaku .mic-button.mic-stopping{border-color:#ff6952;color:#ff9b86;background:rgba(255,105,82,.13)}
+@keyframes hk-mic-closing{to{box-shadow:0 0 34px rgba(255,174,72,.42);transform:scale(.985)}}
+.honyaku .voice-router-core[data-state="ending"] .voice-router-readout strong{color:#ffae48}
+.honyaku .voice-router-core[data-state="stopped"] .voice-router-readout strong{color:#ff6952}
+.honyaku .language-bar:has(.voice-router-core[data-state="ending"]){border-color:rgba(255,174,72,.72);box-shadow:0 0 40px -18px rgba(255,174,72,.72)}
+.honyaku .language-bar:has(.voice-router-core[data-state="stopped"]){border-color:rgba(255,105,82,.46)}
+.honyaku .language-bar:has(.voice-router-core[data-state="ending"]) .swap-button{background:#ffae48;box-shadow:0 0 0 5px rgba(255,174,72,.12),0 0 26px rgba(255,174,72,.58)}
+.honyaku .language-bar:has(.voice-router-core[data-state="stopped"]) .swap-button{background:#ff6952;box-shadow:0 0 0 5px rgba(255,105,82,.1)}
+@media (prefers-reduced-motion:reduce){.honyaku .mic-cutoff-orbit,.honyaku .mic-cutoff-orbit circle,.honyaku .mic-cutoff-orbit i,.honyaku .mic-button.mic-ending{animation:none}}

@@ -1,4 +1,4 @@
-export type MicrophonePhase = "off" | "starting" | "listening" | "speech" | "stopping" | "stopped" | "error";
+export type MicrophonePhase = "off" | "starting" | "listening" | "speech" | "ending" | "stopping" | "stopped" | "error";
 export type MicrophoneEvent = "request" | "ready" | "speech" | "quiet" | "stop" | "audioend" | "end" | "error";
 
 // Late speech events must never turn a stopped microphone back on.
@@ -10,6 +10,7 @@ export function microphoneTransition(phase: MicrophonePhase, event: MicrophoneEv
   if (event === "stop") return "stopping";
   if (phase === "stopping") return phase;
   if (event === "speech") return "speech";
-  if (event === "ready" || event === "quiet") return "listening";
+  if (event === "quiet") return phase === "speech" ? "ending" : phase;
+  if (event === "ready") return "listening";
   return phase;
 }

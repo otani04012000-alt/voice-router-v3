@@ -508,13 +508,23 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
       );
   const routerState: RouterVisualState = busy
     ? "translating"
+    : voice.micPhase === "ending" || voice.micPhase === "stopping"
+      ? "ending"
     : voice.listening
       ? "listening"
+      : voice.micPhase === "stopped"
+        ? "stopped"
       : result
         ? "delivered"
         : "idle";
   const routerPhaseLabel = busy
     ? uiText("ことばを翻訳しています。")
+    : voice.micPhase === "ending"
+      ? uiText("まもなくマイクが切れます")
+      : voice.micPhase === "stopping"
+        ? uiText("マイクを停止中")
+        : voice.micPhase === "stopped"
+          ? uiText("マイクが切れました")
     : voice.micPhase === "speech"
       ? uiText("声を聞き取っています")
       : voice.listening
@@ -553,7 +563,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
   };
 
   return (
-    <main className="honyaku" lang={uiLanguage === "zh" ? "zh-CN" : uiLanguage} data-ui-language={uiLanguage} data-conversation-state={busy ? "translating" : voice.listening ? "listening" : result ? "delivered" : "idle"}>
+    <main className="honyaku" lang={uiLanguage === "zh" ? "zh-CN" : uiLanguage} data-ui-language={uiLanguage} data-mic-phase={voice.micPhase} data-conversation-state={busy ? "translating" : voice.listening ? "listening" : result ? "delivered" : "idle"}>
       <aside className="studio-rail">
         <Link href="/" className="brand-mark" aria-label={uiText("翻訳王 ホーム")}>
           <Languages size={24} />
@@ -934,7 +944,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                 </div>
                 <div className="input-actions">
                   <button
-                    className={`mic-button ${voice.listening ? "listening" : ""}`}
+                    className={`mic-button ${voice.listening ? "listening" : ""} mic-${voice.micPhase}`}
                     type="button"
                     disabled={(busy && !voice.listening) || !voice.supported || voice.micPhase === "stopping"}
                     onClick={() => voice.start(source)}
