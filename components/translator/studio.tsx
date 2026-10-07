@@ -45,6 +45,7 @@ import type { RoomMessage } from "@/app/secret-room/[roomId]/types";
 import { useVoice } from "./use-voice";
 import { UI_LANGUAGES, isUiLanguage, resolveUiLanguage, translateUi, type UiLanguage } from "./ui-language";
 import SecretaryPresence from "./secretary-presence";
+import VoiceRouterCore, { type RouterVisualState } from "./voice-router-core";
 import "./studio.css";
 
 const SAVED_KEY = "honyaku.saved.v1";
@@ -505,6 +506,22 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
         t.source === result.source &&
         t.target === result.target,
       );
+  const routerState: RouterVisualState = busy
+    ? "translating"
+    : voice.listening
+      ? "listening"
+      : result
+        ? "delivered"
+        : "idle";
+  const routerPhaseLabel = busy
+    ? uiText("ことばを翻訳しています。")
+    : voice.micPhase === "speech"
+      ? uiText("声を聞き取っています")
+      : voice.listening
+        ? uiText("マイク受付中")
+        : result
+          ? uiText("訳文ができました")
+          : uiText("入力の準備ができています。");
 
   const enterRoom = () => {
     const name = memberNameDraft.trim().replace(/\s+/g, " ").slice(0, 40);
@@ -705,6 +722,13 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
             className={`language-bar ${swapping ? "swapping" : ""}`}
             aria-label={uiText("会話の言語")}
           >
+            <VoiceRouterCore
+              state={routerState}
+              signal={voice.signal}
+              sourceLabel={LANGUAGES[source].native}
+              targetLabel={LANGUAGES[target].native}
+              phaseLabel={routerPhaseLabel}
+            />
             <label>
               <span>{uiText("あなたのことば")}</span>
               <select

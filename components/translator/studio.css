@@ -353,3 +353,36 @@ to{opacity:1;transform:none}
 .honyaku .swap-button{animation:hk-bolt 4s ease-in-out infinite}
 .honyaku .swap-button:hover{transform:rotate(90deg)}
 @media (prefers-reduced-motion:reduce){.honyaku::before{animation:none}}
+/* ===== VOICE ROUTER CORE — 声・翻訳・中継をひとつの生物として可視化 ===== */
+.honyaku .language-bar{overflow:hidden;isolation:isolate;min-height:92px;padding-bottom:30px;transition:border-color .35s,box-shadow .35s}
+.honyaku .language-bar>label,.honyaku .language-bar>.swap-button,.honyaku .language-bar>.language-bar-note{position:relative;z-index:3}
+.honyaku .language-bar>label{padding:5px 7px;background:linear-gradient(90deg,rgba(10,10,8,.88),rgba(10,10,8,.38),transparent)}
+.honyaku .language-bar>label:last-of-type{background:linear-gradient(-90deg,rgba(10,10,8,.88),rgba(10,10,8,.38),transparent)}
+.honyaku .voice-router-core{position:absolute;z-index:1;inset:0;pointer-events:none;overflow:hidden}
+.honyaku .voice-router-core canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.honyaku .voice-router-readout{position:absolute;z-index:2;left:16px;right:16px;bottom:5px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:9px;color:rgba(244,240,230,.48);font-family:var(--dot);font-size:8px;line-height:1;letter-spacing:.08em;text-transform:uppercase}
+.honyaku .voice-router-readout span:last-child{text-align:right}
+.honyaku .voice-router-readout strong{display:inline-flex;align-items:center;gap:6px;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--gold-hi);font-family:var(--sans);font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:none}
+.honyaku .voice-router-readout strong::before{content:"";width:5px;height:5px;flex:none;border-radius:50%;background:currentColor;box-shadow:0 0 9px currentColor}
+.honyaku .voice-router-core[data-state="listening"] .voice-router-readout strong{color:var(--volt)}
+.honyaku .voice-router-core[data-state="translating"] .voice-router-readout strong{color:#e2b2ff}
+.honyaku .voice-router-core[data-state="delivered"] .voice-router-readout strong{color:var(--midori)}
+.honyaku .language-bar:has(.voice-router-core[data-state="listening"]){border-color:rgba(95,212,255,.62);box-shadow:0 0 34px -19px rgba(95,212,255,.75)}
+.honyaku .language-bar:has(.voice-router-core[data-state="translating"]){border-color:rgba(226,178,255,.55);box-shadow:0 0 38px -20px rgba(226,178,255,.8)}
+.honyaku .language-bar:has(.voice-router-core[data-state="delivered"]){border-color:rgba(95,227,154,.48);box-shadow:0 0 30px -18px rgba(95,227,154,.7)}
+.honyaku .language-bar:has(.voice-router-core[data-state="listening"]) .swap-button{background:var(--volt);box-shadow:0 0 0 5px rgba(95,212,255,.12),0 0 24px rgba(95,212,255,.5)}
+.honyaku .language-bar:has(.voice-router-core[data-state="translating"]) .swap-button{background:linear-gradient(135deg,#f2d7ff,#b96ee3);box-shadow:0 0 0 5px rgba(226,178,255,.12),0 0 24px rgba(226,178,255,.52)}
+.honyaku .language-bar:has(.voice-router-core[data-state="delivered"]) .swap-button{background:var(--midori);box-shadow:0 0 0 5px rgba(95,227,154,.12),0 0 22px rgba(95,227,154,.42)}
+@media (min-width:960px){
+ .honyaku .language-bar{min-height:106px;padding-bottom:32px}
+ .honyaku .voice-router-readout{left:28px;right:28px;bottom:7px;font-size:9px}
+ .honyaku .voice-router-readout strong{font-size:11px}
+}
+@media (max-width:520px){
+ .honyaku .language-bar{min-height:88px;padding-left:12px;padding-right:12px}
+ .honyaku .voice-router-readout{left:10px;right:10px;grid-template-columns:1fr;justify-items:center}
+ .honyaku .voice-router-readout span{display:none}
+ .honyaku .voice-router-readout strong{max-width:min(220px,72vw);font-size:9px}
+ .honyaku .language-bar>label{padding-left:3px;padding-right:3px}
+ .honyaku .language-bar select{font-size:17px}
+}
