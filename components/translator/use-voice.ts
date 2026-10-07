@@ -66,6 +66,7 @@ export function useVoice(
   const meterStream = useRef<MediaStream | null>(null);
   const meterContext = useRef<AudioContext | null>(null);
   const stoppedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const speechRun = useRef(0);
   const textCallback = useRef(onText),
     noticeCallback = useRef(onNotice);
 
@@ -172,6 +173,7 @@ export function useVoice(
         r.abort();
       }
       stopMeter();
+      speechRun.current += 1;
       window.speechSynthesis?.cancel();
     };
   }, [stopMeter]);
@@ -199,6 +201,7 @@ export function useVoice(
       );
       return;
     }
+    speechRun.current += 1;
     window.speechSynthesis?.cancel();
     setSpeaking(false);
     setInterim("");
@@ -271,7 +274,12 @@ export function useVoice(
     }
   }, [startMeter, stopMeter]);
   const speak = useCallback(
-    (text: string, language: Language, slow = false) => {
+    (
+      text: string,
+      language: Language,
+      slow = false,
+      onFinished?: () => void,
+    ) => {
       if (!window.speechSynthesis) {
         noticeCallback.current("この端末では読み上げを使えません。");
         return;
@@ -287,19 +295,28 @@ export function useVoice(
         );
         return;
       }
+      const run = ++speechRun.current;
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
       u.lang = LANGUAGES[language].locale;
       u.voice = voice;
       u.rate = slow ? 0.7 : 0.95;
-      u.onend = () => setSpeaking(false);
-      u.onerror = () => setSpeaking(false);
+      u.onend = () => {
+        if (speechRun.current !== run) return;
+        setSpeaking(false);
+        onFinished?.();
+      };
+      u.onerror = () => {
+        if (speechRun.current !== run) return;
+        setSpeaking(false);
+      };
       setSpeaking(true);
       window.speechSynthesis.speak(u);
     },
     [],
   );
   const silence = useCallback(() => {
+    speechRun.current += 1;
     window.speechSynthesis?.cancel();
     setSpeaking(false);
   }, []);

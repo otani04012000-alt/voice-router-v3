@@ -43,6 +43,7 @@ import {
 import { useRoomSocket } from "@/app/secret-room/[roomId]/use-room-socket";
 import type { RoomMessage } from "@/app/secret-room/[roomId]/types";
 import { useVoice } from "./use-voice";
+import { nextConversationTurn } from "./conversation-turn";
 import { UI_LANGUAGES, isUiLanguage, resolveUiLanguage, translateUi, type UiLanguage } from "./ui-language";
 import SecretaryPresence from "./secretary-presence";
 import VoiceRouterCore, { type RouterVisualState } from "./voice-router-core";
@@ -122,6 +123,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const localTypingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const swapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const conversationRestartTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   const presentDialog = useRef<HTMLDialogElement>(null);
   const textarea = useRef<HTMLTextAreaElement>(null);
@@ -187,6 +189,8 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
       if (typingTimer.current) clearTimeout(typingTimer.current);
       if (localTypingTimer.current) clearTimeout(localTypingTimer.current);
       if (swapTimer.current) clearTimeout(swapTimer.current);
+      if (conversationRestartTimer.current)
+        clearTimeout(conversationRestartTimer.current);
     };
   }, [remote]);
   useEffect(() => {
@@ -335,8 +339,37 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
         speaker,
       };
       setResult(turn);
+      setText("");
       if (!remote) addTurn(turn);
-      if (autoSpeak) voice.speak(turn.translated, turn.target);
+      const nextConversation = nextConversationTurn({
+        speaker: turn.speaker,
+        myLanguage,
+        otherLanguage,
+        conversationMode: conversationModeRef.current,
+        remote,
+        speechFinished: false,
+      });
+      if (nextConversation.advanceSpeaker)
+        setSpeaker(nextConversation.nextSpeaker);
+      if (autoSpeak) {
+        voice.speak(turn.translated, turn.target, false, () => {
+          const next = nextConversationTurn({
+            speaker: turn.speaker,
+            myLanguage,
+            otherLanguage,
+            conversationMode: conversationModeRef.current,
+            remote,
+            speechFinished: true,
+          });
+          if (!next.restartMicrophone) return;
+          setSpeaker(next.nextSpeaker);
+          conversationRestartTimer.current = setTimeout(() => {
+            conversationRestartTimer.current = null;
+            if (!conversationModeRef.current) return;
+            void voice.start(next.nextLanguage);
+          }, 350);
+        });
+      }
     } catch (e) {
       if (!controller.signal.aborted)
         setNotice(e instanceof Error ? e.message : "翻訳できませんでした。");
@@ -356,6 +389,14 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
     conversationModeRef.current = next;
     setConversationMode(next);
     setAutoSpeak(next);
+    if (!next) {
+      if (conversationRestartTimer.current) {
+        clearTimeout(conversationRestartTimer.current);
+        conversationRestartTimer.current = null;
+      }
+      voice.stop();
+      voice.silence();
+    }
     setNotice(
       next
         ? "会話モードを開始しました。話し終えると、自動で翻訳して読み上げます。"
@@ -838,7 +879,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                 className={`conversation-mode-toggle ${conversationMode ? "active" : ""}`}
                 aria-pressed={conversationMode}
                 onClick={toggleConversationMode}
-                disabled={busy || voice.listening}
+                disabled={!conversationMode && (busy || voice.listening)}
               >
                 <span className="mode-signal" aria-hidden="true">
                   <i />
