@@ -99,6 +99,39 @@ export default function VoiceRouterCore({
       context.stroke();
     };
 
+    const lightning = (
+      fromX: number,
+      toX: number,
+      offset: number,
+      color: string,
+      strength: number,
+      now: number,
+    ) => {
+      const segments = 22;
+      context.save();
+      context.beginPath();
+      context.moveTo(fromX, height / 2);
+      for (let index = 1; index <= segments; index++) {
+        const progress = index / segments;
+        const x = fromX + (toX - fromX) * progress;
+        const taper = Math.sin(progress * Math.PI);
+        const noise =
+          Math.sin(index * 9.17 + now * 0.018 + offset) * 5.5 * taper +
+          Math.sin(index * 2.31 - now * 0.011) * 2.4 * taper;
+        context.lineTo(x, height / 2 + noise + offset);
+      }
+      context.strokeStyle = `rgba(${color},${strength})`;
+      context.lineWidth = 1.4;
+      context.shadowColor = `rgba(${color},0.95)`;
+      context.shadowBlur = 13;
+      context.stroke();
+      context.lineWidth = 0.5;
+      context.strokeStyle = "rgba(255,255,255,0.9)";
+      context.shadowBlur = 0;
+      context.stroke();
+      context.restore();
+    };
+
     const draw = (now: number) => {
       const elapsed = now - start;
       const live = signal.current;
@@ -137,6 +170,16 @@ export default function VoiceRouterCore({
       for (let lane = -2; lane <= 2; lane++) {
         const bend = lane * (5 + high * 18) + Math.sin(now * 0.0015 + lane) * (2 + mid * 9);
         line(width * 0.02, centerY, width * 0.98, centerY, bend, main, lane === 0 ? 0.62 : 0.22, lane === 0 ? 1.5 : 0.8);
+      }
+
+      if (state === "translating") {
+        const strike = 0.42 + Math.sin(now * 0.021) * 0.18;
+        lightning(centerX - coreRadius * 0.35, width * 0.015, -5, main, strike, now);
+        lightning(centerX + coreRadius * 0.35, width * 0.985, 4, main, strike, now);
+        if (Math.sin(now * 0.013) > 0.72) {
+          lightning(centerX, width * 0.08, 8, hot, 0.28, now + 83);
+          lightning(centerX, width * 0.92, -9, hot, 0.28, now + 131);
+        }
       }
 
       for (let index = 0; index < 24; index++) {
@@ -239,6 +282,18 @@ export default function VoiceRouterCore({
           context.moveTo(centerX + Math.cos(angle) * from, centerY + Math.sin(angle) * from);
           context.lineTo(centerX + Math.cos(angle) * to, centerY + Math.sin(angle) * to);
           context.stroke();
+        }
+        for (let ring = 0; ring < 3; ring++) {
+          const progress = Math.min(1, Math.max(0, elapsed / 1150 - ring * 0.13));
+          if (progress <= 0 || progress >= 1) continue;
+          context.beginPath();
+          context.arc(centerX, centerY, radius + 12 + progress * Math.min(width * 0.34, 240), 0, TAU);
+          context.strokeStyle = `rgba(${main},${0.48 * (1 - progress)})`;
+          context.lineWidth = 1.4 - progress * 0.8;
+          context.shadowColor = `rgba(${main},0.75)`;
+          context.shadowBlur = 12;
+          context.stroke();
+          context.shadowBlur = 0;
         }
       }
 

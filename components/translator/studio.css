@@ -353,6 +353,17 @@ to{opacity:1;transform:none}
 .honyaku .swap-button{animation:hk-bolt 4s ease-in-out infinite}
 .honyaku .swap-button:hover{transform:rotate(90deg)}
 @media (prefers-reduced-motion:reduce){.honyaku::before{animation:none}}
+/* ===== 王の一撃 — 翻訳経路が画面を貫く一度きりの決め技 ===== */
+.honyaku::after{content:"";position:fixed;inset:0;z-index:20;pointer-events:none;opacity:0}
+.honyaku[data-conversation-state="translating"]::after{opacity:1;background:linear-gradient(90deg,transparent 0,rgba(226,178,255,.04) 18%,rgba(255,239,188,.22) 49.7%,rgba(255,255,255,.52) 50%,rgba(255,239,188,.22) 50.3%,rgba(226,178,255,.04) 82%,transparent 100%);background-size:250% 100%;mix-blend-mode:screen;animation:hk-royal-route 1.15s linear infinite}
+@keyframes hk-royal-route{from{background-position:150% 0}to{background-position:-150% 0}}
+.honyaku[data-conversation-state="delivered"]::after{background:radial-gradient(circle at 50% 18%,rgba(225,255,235,.76) 0,rgba(95,227,154,.22) 9%,rgba(95,227,154,.06) 28%,transparent 58%);animation:hk-royal-impact 1.05s var(--ease) both}
+@keyframes hk-royal-impact{0%{opacity:0;transform:scale(.82);filter:brightness(1)}18%{opacity:1;filter:brightness(1.85)}55%{opacity:.42;transform:scale(1.05);filter:brightness(1.15)}100%{opacity:0;transform:scale(1.18);filter:brightness(1)}}
+.honyaku[data-conversation-state="translating"] .input-card{animation:hk-source-charge 1s ease-in-out infinite alternate}
+@keyframes hk-source-charge{from{box-shadow:0 0 0 rgba(226,178,255,0)}to{box-shadow:0 0 34px -14px rgba(226,178,255,.72)}}
+.honyaku[data-conversation-state="delivered"] .output-card.has-result{animation:hk-output-strike .92s var(--ease) both}
+@keyframes hk-output-strike{0%{opacity:.35;transform:translateX(-13px);filter:brightness(1.9)}38%{opacity:1;transform:translateX(3px);filter:brightness(1.28)}100%{transform:none;filter:none}}
+@media (prefers-reduced-motion:reduce){.honyaku::after{display:none}.honyaku[data-conversation-state="translating"] .input-card,.honyaku[data-conversation-state="delivered"] .output-card.has-result{animation:none}}
 /* ===== VOICE ROUTER CORE — 声・翻訳・中継をひとつの生物として可視化 ===== */
 .honyaku .language-bar{overflow:hidden;isolation:isolate;min-height:118px;padding-bottom:34px;transition:border-color .35s,box-shadow .35s}
 .honyaku .language-bar>label,.honyaku .language-bar>.swap-button,.honyaku .language-bar>.language-bar-note{position:relative;z-index:3}
