@@ -509,7 +509,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
   const routerState: RouterVisualState = busy
     ? "translating"
     : voice.micPhase === "ending" || voice.micPhase === "stopping"
-      ? "ending"
+      ? "listening"
     : voice.listening
       ? "listening"
       : voice.micPhase === "stopped"
@@ -949,17 +949,28 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                     disabled={(busy && !voice.listening) || !voice.supported || voice.micPhase === "stopping"}
                     onClick={() => voice.start(source)}
                   >
-                    {voice.micPhase === "speech" ? (
-                      <span className="live-voice-bars" aria-hidden="true">
-                        <i />
-                        <i />
-                        <i />
-                        <i />
-                      </span>
-                    ) : (
-                      <Mic size={18} />
-                    )}
-                    {voice.micPhase === "stopping" ? uiText("マイクを停止中") : voice.listening ? uiText("音声を停止") : uiText("声で入力")}
+                    <span className="mic-visual" aria-hidden="true">
+                      {voice.micPhase === "ending" ? <i className="mic-button-countdown" /> : null}
+                      {voice.micPhase === "speech" ? (
+                        <span className="live-voice-bars">
+                          <i />
+                          <i />
+                          <i />
+                          <i />
+                        </span>
+                      ) : voice.micPhase === "stopped" ? (
+                        <Check size={19} />
+                      ) : (
+                        <Mic size={18} />
+                      )}
+                    </span>
+                    {voice.micPhase === "ending" || voice.micPhase === "stopping"
+                      ? uiText("マイクを停止中")
+                      : voice.micPhase === "stopped"
+                        ? uiText("マイク停止済み")
+                        : voice.listening
+                          ? uiText("音声を停止")
+                          : uiText("声で入力")}
                   </button>
                   <button
                     className="translate-button"

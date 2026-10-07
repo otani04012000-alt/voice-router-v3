@@ -509,3 +509,13 @@ to{opacity:1;transform:none}
 .honyaku .language-bar:has(.voice-router-core[data-state="stopped"]) .swap-button{background:var(--midori);box-shadow:0 0 0 5px rgba(95,227,154,.1),0 0 22px rgba(95,227,154,.38)}
 @keyframes hk-mic-finished{0%{filter:brightness(1.7);transform:scale(.985)}35%{filter:brightness(1.15);transform:none}100%{filter:none}}
 @media (prefers-reduced-motion:reduce){.honyaku .mic-cutoff-orbit,.honyaku .mic-cutoff-orbit circle,.honyaku .mic-cutoff-orbit i,.honyaku .mic-button.mic-ending{animation:none}}
+
+/* ===== マイクボタン終了時計 — 大きな輪がマイクへ収束する ===== */
+.honyaku .mic-visual{position:relative;display:grid;place-items:center;width:24px;height:24px;flex:none;overflow:visible}
+.honyaku .mic-button-countdown{position:absolute;z-index:0;width:66px;height:66px;border:3px solid #ffae48;border-radius:50%;background:radial-gradient(circle,rgba(255,174,72,.12),transparent 62%);box-shadow:0 0 12px rgba(255,174,72,.9),inset 0 0 10px rgba(255,174,72,.5);pointer-events:none;animation:hk-mic-ring-collapse 1.35s linear forwards}
+.honyaku .mic-visual>svg,.honyaku .mic-visual>.live-voice-bars{position:relative;z-index:1}\n.honyaku .mic-button-countdown::before,.honyaku .mic-button-countdown::after{content:"";position:absolute;inset:7px;border:1px solid rgba(255,224,174,.72);border-radius:50%}
+.honyaku .mic-button-countdown::after{inset:-9px;border-color:rgba(95,212,255,.35)}
+@keyframes hk-mic-ring-collapse{0%{opacity:1;transform:scale(1);border-color:#5fd4ff;box-shadow:0 0 18px rgba(95,212,255,.85),inset 0 0 12px rgba(95,212,255,.5)}35%{border-color:#ffcf74}82%{opacity:1}100%{opacity:.2;transform:scale(.16);border-color:#ff6952;box-shadow:0 0 24px rgba(255,105,82,.9)}}
+.honyaku .mic-button.mic-stopped .mic-visual{color:var(--midori);filter:drop-shadow(0 0 8px rgba(95,227,154,.75))}
+.honyaku .mic-button.mic-stopped{border-color:rgba(95,227,154,.62);color:var(--midori);background:rgba(95,227,154,.1)}
+@media (prefers-reduced-motion:reduce){.honyaku .mic-button-countdown{width:30px;height:30px;animation:none}}
