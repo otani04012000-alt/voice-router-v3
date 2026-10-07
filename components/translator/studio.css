@@ -423,7 +423,7 @@ to{opacity:1;transform:none}
 @media (max-width:600px){
 .honyaku{--gutter:12px;font-size:14px}
 .honyaku .studio-body{padding:0 var(--gutter) calc(40px + env(safe-area-inset-bottom))}
-.honyaku .studio-content{gap:12px}
+.honyaku .studio-content{gap:8px}
 .honyaku .studio-header{gap:8px;padding:max(11px,env(safe-area-inset-top)) 84px 10px 0;margin-bottom:10px}
 .honyaku .wordmark{font-size:21px;letter-spacing:.12em;white-space:nowrap}
 .honyaku .wordmark::before{width:18px;height:18px}
@@ -433,29 +433,32 @@ to{opacity:1;transform:none}
 .honyaku .studio-rail{top:max(11px,env(safe-area-inset-top));right:12px}
 .honyaku .rail-items{gap:5px}
 .honyaku .rail-button{width:38px;height:38px}
-.honyaku .language-bar{min-height:102px;gap:5px;padding:9px 9px 29px 12px}
+.honyaku .language-bar{min-height:82px;gap:8px;padding:7px 9px 23px 12px}
 .honyaku .language-bar>label{padding:3px 2px}
 .honyaku .language-bar label>span{font-size:9px;letter-spacing:.08em}
 .honyaku .language-bar select{font-size:16px;line-height:1.35}
 .honyaku .swap-button{width:38px;height:38px}
-.honyaku .voice-router-readout{bottom:7px}
-.honyaku .workbench{gap:12px}
-.honyaku .input-card,.honyaku .output-card{padding:13px 12px 14px 16px;gap:10px}
-.honyaku .card-heading::before{font-size:21px}
+.honyaku .voice-router-core canvas{transform:scale(.72);transform-origin:50% 44%}
+.honyaku .voice-router-readout{bottom:6px}
+.honyaku .voice-router-readout strong{font-size:10px}
+.honyaku .workbench{gap:8px}
+.honyaku .input-card,.honyaku .output-card{padding:10px 12px 12px 16px;gap:8px}
+.honyaku .card-heading::before{display:none}
+.honyaku .card-heading h2{padding-left:0;border-left:0}
 .honyaku .card-heading h2{font-size:11px;letter-spacing:.1em}
 .honyaku .speaker-switch button{min-height:40px;padding:0 5px;font-size:12px}
-.honyaku .conversation-mode-toggle{min-height:48px;padding:8px 9px}
+.honyaku .conversation-mode-toggle{min-height:44px;padding:6px 9px}
 .honyaku .mode-copy strong{font-size:13px}
-.honyaku .input-card form{gap:10px}
-.honyaku textarea{min-height:118px;padding:12px;font-size:19px;line-height:1.55}
-.honyaku .input-actions{position:sticky;z-index:8;bottom:calc(8px + env(safe-area-inset-bottom));grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:8px;padding:6px;background:rgba(8,8,6,.88);border:1px solid rgba(232,201,106,.24);backdrop-filter:blur(12px)}
-.honyaku .mic-button,.honyaku .translate-button{height:52px;padding:0 9px;font-size:13px;letter-spacing:.04em}
-.honyaku .voice-console{min-height:42px;padding:7px 9px}
-.honyaku .voice-console-detail{font-size:10px}
+.honyaku .input-card form{gap:8px}
+.honyaku textarea{min-height:94px;padding:10px;font-size:18px;line-height:1.55}
+.honyaku .input-actions{position:sticky;z-index:8;bottom:calc(8px + env(safe-area-inset-bottom));grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:8px;padding:0;background:rgba(8,8,6,.94);backdrop-filter:blur(12px)}
+.honyaku .mic-button,.honyaku .translate-button{height:46px;padding:0 9px;font-size:13px;letter-spacing:.04em}
+.honyaku .voice-console{min-height:36px;padding:5px 9px}
+.honyaku .voice-console-detail{display:none}
 .honyaku .tone-row{gap:7px}
 .honyaku .tone{min-height:34px;padding:0 10px;font-size:11px}
 .honyaku .translated-text{font-size:clamp(25px,8vw,34px);line-height:1.45}
-.honyaku .result-tools button{min-width:0;height:62px;padding:4px 2px;font-size:10px;letter-spacing:0}
+.honyaku .result-tools button{min-width:0;height:54px;padding:4px 2px;font-size:10px;letter-spacing:0}
 .honyaku .result-bottom{flex-wrap:wrap;gap:8px 12px}
 .honyaku .send-button{min-height:46px;margin-left:auto}
 .honyaku .conversation-section{padding:14px 12px}
