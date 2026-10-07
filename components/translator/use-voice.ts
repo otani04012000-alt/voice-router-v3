@@ -65,6 +65,7 @@ export function useVoice(
   const meterFrame = useRef<number | null>(null);
   const meterStream = useRef<MediaStream | null>(null);
   const meterContext = useRef<AudioContext | null>(null);
+  const stoppedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const textCallback = useRef(onText),
     noticeCallback = useRef(onNotice);
 
@@ -161,6 +162,7 @@ export function useVoice(
     setSupported(Boolean(w.SpeechRecognition || w.webkitSpeechRecognition));
     window.speechSynthesis?.getVoices();
     return () => {
+      if (stoppedTimer.current) clearTimeout(stoppedTimer.current);
       const r = recognition.current;
       if (r) {
         r.onresult = null;
@@ -180,6 +182,10 @@ export function useVoice(
     }
   }, []);
   const start = useCallback(async (language: Language) => {
+    if (stoppedTimer.current) {
+      clearTimeout(stoppedTimer.current);
+      stoppedTimer.current = null;
+    }
     if (recognition.current) {
       setMicPhase((phase) => microphoneTransition(phase, "stop"));
       recognition.current.stop();
@@ -203,7 +209,18 @@ export function useVoice(
     r.continuous = false;
     r.interimResults = true;
     const update = (event: Parameters<typeof microphoneTransition>[1]) => {
-      if (recognition.current === r) setMicPhase((phase) => microphoneTransition(phase, event));
+      if (recognition.current !== r) return;
+      setMicPhase((phase) => {
+        const next = microphoneTransition(phase, event);
+        if (next === "stopped") {
+          if (stoppedTimer.current) clearTimeout(stoppedTimer.current);
+          stoppedTimer.current = setTimeout(() => {
+            stoppedTimer.current = null;
+            setMicPhase((current) => current === "stopped" ? "off" : current);
+          }, 1800);
+        }
+        return next;
+      });
     };
     r.onstart = r.onaudiostart = () => update("ready");
     r.onspeechstart = () => update("speech");

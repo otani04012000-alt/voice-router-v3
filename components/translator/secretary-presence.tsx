@@ -18,7 +18,7 @@ export default function SecretaryPresence({ phase, busy, speaking, delivered, ui
   const active = ["starting", "listening", "speech", "ending", "stopping"].includes(phase);
   const micLabel = phase === "starting" ? "マイクを準備中" : phase === "listening" ? "マイク受付中" : phase === "speech" ? "声を聞き取っています" : phase === "ending" ? "無音を検知しました" : phase === "stopping" ? "マイクを停止中" : phase === "stopped" ? "マイクが切れました" : phase === "error" ? "マイクを確認してください" : "マイクはオフ";
   const state = active || phase === "error" ? phase : busy ? "translating" : speaking ? "speaking" : delivered ? "delivered" : phase;
-  const detail = phase === "error" ? "音声入力を続けられませんでした。文字入力も使えます。" : phase === "ending" ? "まもなくマイクが切れます" : active ? (phase === "stopping" ? "音声入力の終了を待っています" : "話し終えたら停止できます") : busy ? "ことばを翻訳しています。" : speaking ? "訳文を読み上げています" : delivered ? "訳文ができました" : phase === "stopped" ? "もう声は受け付けていません" : "声でも文字でも、あなたのことばで";
+  const detail = phase === "error" ? "音声入力を続けられませんでした。文字入力も使えます。" : phase === "ending" ? "まもなくマイクが切れます" : active ? (phase === "stopping" ? "音声入力の終了を待っています" : "話し終えたら停止できます") : busy ? "ことばを翻訳しています。" : speaking ? "訳文を読み上げています" : delivered ? "訳文ができました" : phase === "stopped" ? "もう一度話すには、声で入力を押してください" : "声でも文字でも、あなたのことばで";
   return (
     <aside className="voice-console" data-state={state} aria-label={uiText("音声入力の状態")}>
       <div className="voice-console-copy" role="status" aria-live="polite" aria-atomic="true">
@@ -26,7 +26,7 @@ export default function SecretaryPresence({ phase, busy, speaking, delivered, ui
         <span className="voice-console-detail">{uiText(detail)}</span>
       </div>
       <div className="voice-console-signal" aria-hidden="true">
-        {phase === "ending" || phase === "stopping" ? <span className="mic-cutoff-orbit"><svg viewBox="0 0 30 30"><circle cx="15" cy="15" r="12"/></svg><i/></span> : phase === "stopped" ? <MicOff size={18}/> : busy && !active ? <LoaderCircle size={18} className="spin"/> : delivered && !active && !speaking ? <Check size={18}/> : speaking && !active ? <Volume2 size={18}/> : <div className="voice-console-wave">{Array.from({length:9},(_,i)=><i key={i}/>)}</div>}
+        {phase === "ending" || phase === "stopping" ? <span className="mic-cutoff-orbit"><svg viewBox="0 0 30 30"><circle cx="15" cy="15" r="12"/></svg><i/></span> : phase === "stopped" ? <Check size={19}/> : busy && !active ? <LoaderCircle size={18} className="spin"/> : delivered && !active && !speaking ? <Check size={18}/> : speaking && !active ? <Volume2 size={18}/> : <div className="voice-console-wave">{Array.from({length:9},(_,i)=><i key={i}/>)}</div>}
       </div>
       {active && <button type="button" className="voice-console-stop" onClick={onStop} disabled={phase === "stopping"} aria-label={uiText("音声を停止")}><Square size={12}/>{uiText("停止")}</button>}
     </aside>

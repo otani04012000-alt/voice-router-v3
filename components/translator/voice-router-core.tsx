@@ -77,7 +77,7 @@ export default function VoiceRouterCore({
     const palette = () => {
       if (state === "listening") return { main: "95,212,255", hot: "219,248,255" };
       if (state === "ending") return { main: "255,174,72", hot: "255,238,191" };
-      if (state === "stopped") return { main: "255,105,82", hot: "255,221,210" };
+      if (state === "stopped") return { main: "95,227,154", hot: "226,255,236" };
       if (state === "translating") return { main: "226,178,255", hot: "255,235,187" };
       if (state === "delivered") return { main: "95,227,154", hot: "232,255,220" };
       return { main: "232,201,106", hot: "255,242,194" };
