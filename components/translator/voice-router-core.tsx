@@ -42,7 +42,7 @@ export default function VoiceRouterCore({
     if (!context) return;
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const particles: Particle[] = Array.from({ length: 84 }, (_, index) => ({
+    const particles: Particle[] = Array.from({ length: 132 }, (_, index) => ({
       x: (index * 0.61803398875) % 1,
       y: ((index * 47) % 83) / 83,
       speed: 0.00018 + (index % 7) * 0.000035,
@@ -112,13 +112,13 @@ export default function VoiceRouterCore({
       const { main, hot } = palette();
       const centerX = width / 2;
       const centerY = height / 2;
-      const coreRadius = Math.min(25, Math.max(17, height * 0.25));
+      const coreRadius = Math.min(40, Math.max(25, height * 0.34));
 
       context.clearRect(0, 0, width, height);
 
       const glow = context.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.max(width * 0.33, 120));
-      glow.addColorStop(0, `rgba(${main},${0.11 + energy * 0.2})`);
-      glow.addColorStop(0.35, `rgba(${main},${0.035 + energy * 0.08})`);
+      glow.addColorStop(0, `rgba(${main},${0.28 + energy * 0.24})`);
+      glow.addColorStop(0.35, `rgba(${main},${0.09 + energy * 0.12})`);
       glow.addColorStop(1, `rgba(${main},0)`);
       context.fillStyle = glow;
       context.fillRect(0, 0, width, height);
@@ -129,14 +129,26 @@ export default function VoiceRouterCore({
         const wave = Math.sin(now * 0.0014 + particle.phase) * (3 + energy * 10);
         const y = centerY + particle.lane * height * 0.22 + wave;
         const distance = Math.abs(x - centerX) / Math.max(1, width / 2);
-        const alpha = (0.08 + energy * 0.22) * (1 - distance * 0.45);
+        const alpha = (0.18 + energy * 0.3) * (1 - distance * 0.45);
         context.fillStyle = `rgba(${main},${alpha})`;
         context.fillRect(x, y, particle.size + energy * 1.8, particle.size + energy * 1.8);
       }
 
       for (let lane = -2; lane <= 2; lane++) {
         const bend = lane * (5 + high * 18) + Math.sin(now * 0.0015 + lane) * (2 + mid * 9);
-        line(width * 0.04, centerY, width * 0.96, centerY, bend, main, lane === 0 ? 0.32 : 0.1, lane === 0 ? 1.15 : 0.55);
+        line(width * 0.02, centerY, width * 0.98, centerY, bend, main, lane === 0 ? 0.62 : 0.22, lane === 0 ? 1.5 : 0.8);
+      }
+
+      for (let index = 0; index < 24; index++) {
+        const angle = (index / 24) * TAU + now * 0.00008;
+        const inner = coreRadius * (1.05 + energy * 0.2);
+        const outer = coreRadius * (1.85 + (index % 3) * 0.18 + energy * 0.5);
+        context.beginPath();
+        context.moveTo(centerX + Math.cos(angle) * inner, centerY + Math.sin(angle) * inner * 0.72);
+        context.lineTo(centerX + Math.cos(angle) * outer, centerY + Math.sin(angle) * outer * 0.72);
+        context.strokeStyle = `rgba(${index % 4 === 0 ? hot : main},${0.12 + energy * 0.32})`;
+        context.lineWidth = index % 4 === 0 ? 1.15 : 0.55;
+        context.stroke();
       }
 
       if (state === "translating" || state === "delivered") {
@@ -189,7 +201,7 @@ export default function VoiceRouterCore({
       body.addColorStop(1, `rgba(${main},0.03)`);
       context.fillStyle = body;
       context.shadowColor = `rgba(${main},0.82)`;
-      context.shadowBlur = 14 + energy * 34;
+      context.shadowBlur = 26 + energy * 46;
       context.fill();
       context.shadowBlur = 0;
 
