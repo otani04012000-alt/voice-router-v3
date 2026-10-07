@@ -276,10 +276,25 @@ export default function VoiceRouterCore({
       }
 
       if (state === "ending") {
+        // 無音を検知してからマイクが閉じるまで、大きな輪を中心へ収束させる。
+        // 残り時間が面積として減るので、文字を読まなくても切断の瞬間が分かる。
+        const countdownStart = Math.min(height * 0.44, width * 0.16, 58);
+        const countdownRadius = Math.max(4, countdownStart * (1 - closing * 0.9));
+        const countdownAlpha = 0.98 - closing * 0.16;
         context.beginPath();
-        context.arc(centerX, centerY, coreRadius + 18, -Math.PI / 2, -Math.PI / 2 + TAU * (1 - closing));
+        context.arc(centerX, centerY, countdownRadius, 0, TAU);
+        context.fillStyle = `rgba(${main},${0.035 + closing * 0.12})`;
+        context.fill();
+        context.strokeStyle = `rgba(${main},${countdownAlpha})`;
+        context.lineWidth = 3.5 + closing * 2.5;
+        context.shadowColor = `rgba(${main},0.95)`;
+        context.shadowBlur = 14 + closing * 18;
+        context.stroke();
+
+        context.beginPath();
+        context.arc(centerX, centerY, countdownRadius + 7, -Math.PI / 2, -Math.PI / 2 + TAU * (1 - closing));
         context.strokeStyle = `rgba(${main},${0.95 - closing * 0.35})`;
-        context.lineWidth = 4;
+        context.lineWidth = 2;
         context.lineCap = "round";
         context.shadowColor = `rgba(${main},0.9)`;
         context.shadowBlur = 16;
@@ -290,13 +305,16 @@ export default function VoiceRouterCore({
 
       if (state === "stopped") {
         context.strokeStyle = `rgba(${main},0.9)`;
-        context.lineWidth = 2;
+        context.lineWidth = 3;
+        context.lineCap = "round";
+        context.lineJoin = "round";
         context.beginPath();
-        context.moveTo(centerX - 9, centerY - 9);
-        context.lineTo(centerX + 9, centerY + 9);
-        context.moveTo(centerX + 9, centerY - 9);
-        context.lineTo(centerX - 9, centerY + 9);
+        context.moveTo(centerX - 11, centerY);
+        context.lineTo(centerX - 3, centerY + 8);
+        context.lineTo(centerX + 13, centerY - 10);
         context.stroke();
+        context.lineCap = "butt";
+        context.lineJoin = "miter";
       }
 
       if (state === "delivered") {

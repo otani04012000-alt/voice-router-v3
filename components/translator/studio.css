@@ -438,7 +438,6 @@ to{opacity:1;transform:none}
 .honyaku .language-bar label>span{font-size:9px;letter-spacing:.08em}
 .honyaku .language-bar select{font-size:16px;line-height:1.35}
 .honyaku .swap-button{width:38px;height:38px}
-.honyaku .voice-router-core canvas{transform:scale(.72);transform-origin:50% 44%}
 .honyaku .voice-router-readout{bottom:6px}
 .honyaku .voice-router-readout strong{font-size:10px}
 .honyaku .workbench{gap:8px}
