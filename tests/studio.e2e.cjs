@@ -1,4 +1,9 @@
 // Run with QA_NODE_MODULES pointing to an installed playwright-core directory.
+// The secret room syncs through Supabase Realtime, so run a local test-only
+// Supabase (`supabase start`, needs Docker) and build against it first:
+//   NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 \
+//   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<local publishable key> pnpm build
+// Never build this test against a production Supabase project.
 const { chromium } = require(
   process.env.QA_NODE_MODULES
     ? process.env.QA_NODE_MODULES + "/playwright-core"
@@ -9,6 +14,17 @@ const assert = require("assert/strict");
 const fs = require("fs");
 const cwd = require("path").resolve(__dirname, "..");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const chunkDir = require("path").join(cwd, ".next/static/chunks");
+const bundled = fs
+  .readdirSync(chunkDir, { recursive: true })
+  .filter((f) => String(f).endsWith(".js"))
+  .map((f) => fs.readFileSync(require("path").join(chunkDir, String(f)), "utf8"))
+  .join("\n");
+assert.match(
+  bundled,
+  /https?:\/\/(127\.0\.0\.1|localhost):54321/,
+  "Build with NEXT_PUBLIC_SUPABASE_URL pointing to a local test Supabase.",
+);
 const log = fs.openSync("/tmp/studio-runtime.log", "w");
 const app = spawn(
   process.execPath,
@@ -22,11 +38,6 @@ const app = spawn(
   ],
   { cwd, stdio: ["ignore", log, log] },
 );
-const ws = spawn(process.execPath, ["server/dist/index.js"], {
-  cwd,
-  env: { ...process.env, PORT: "3312" },
-  stdio: ["ignore", log, log],
-});
 (async () => {
   let browser;
   try {
@@ -63,17 +74,6 @@ const ws = spawn(process.execPath, ["server/dist/index.js"], {
     context.setDefaultTimeout(12000);
     const page = await context.newPage();
     page.on("pageerror", (e) => errors.push(e.message));
-    await context.addInitScript(() => {
-      const Native = window.WebSocket;
-      window.WebSocket = class extends Native {
-        constructor(url, protocols) {
-          super(
-            String(url).includes("railway.app") ? "ws://127.0.0.1:3312" : url,
-            protocols,
-          );
-        }
-      };
-    });
     let fail = false;
     await context.route("**/api/translate", async (route) => {
       if (route.request().method() === "GET")
@@ -182,22 +182,23 @@ const ws = spawn(process.execPath, ["server/dist/index.js"], {
       "PASS: desktop/mobile layout, Japanese/Chinese UI translation, reverse check, saved phrases, presentation/rotation/reply, opt-in history, error retention",
     );
     await page.setViewportSize({ width: 1440, height: 1120 });
-    await page.goto(
-      "http://127.0.0.1:3320/secret-room/qa-session?from=ja&to=vi",
-    );
+    // A fresh room per run so presence left over from earlier runs never counts.
+    const room = `http://127.0.0.1:3320/secret-room/qa-${Date.now()}`;
+    await page.goto(`${room}?from=ja&to=vi`);
     await page.getByLabel("あなたの表示名").fill("大谷");
     await page.getByRole("button", { name: "この名前で入室" }).click();
+    await page.getByText("1人の部屋", { exact: true }).waitFor();
+    await page.locator(".room-member").filter({ hasText: "大谷" }).waitFor();
     const guest = await context.newPage();
     guest.on("pageerror", (e) => errors.push(e.message));
-    await guest.goto(
-      "http://127.0.0.1:3320/secret-room/qa-session?from=vi&to=ja",
-    );
-    await guest.getByLabel("あなたの表示名").fill("リン");
-    await guest.getByRole("button", { name: "この名前で入室" }).click();
+    await guest.goto(`${room}?from=vi&to=ja`);
+    await guest.getByLabel("Tên hiển thị của bạn").fill("リン");
+    await guest.getByRole("button", { name: "Vào phòng với tên này" }).click();
     await page.getByText("2人の部屋", { exact: true }).waitFor();
-    await guest.getByText("2人の部屋", { exact: true }).waitFor();
-    await page.locator(".room-member").filter({ hasText: "大谷" }).waitFor();
+    await guest.getByText("Phòng 2 người", { exact: true }).waitFor();
+    await page.getByRole("status").getByText("リンさんが入室しました。").waitFor();
     await page.locator(".room-member").filter({ hasText: "リン" }).waitFor();
+    await guest.locator(".room-member").filter({ hasText: "大谷" }).waitFor();
     await page
       .getByLabel("翻訳する文章")
       .fill("こんにちは。会えてうれしいです。");
@@ -210,33 +211,37 @@ const ws = spawn(process.execPath, ["server/dist/index.js"], {
       await guest.locator(".turn-translation").textContent(),
       /Xin chào/,
     );
-    await guest.getByLabel("翻訳する文章").fill("Xin chào");
+    await guest.getByLabel("Văn bản cần dịch").fill("Xin chào");
     await guest
-      .getByRole("button", { name: "Dịch · 翻訳", exact: true })
+      .getByRole("button", { name: "Dịch", exact: true })
       .click();
     await guest.locator(".translated-text").waitFor();
     await guest
-      .getByRole("button", { name: "Gửi · 送る", exact: true })
+      .getByRole("button", { name: "Gửi cho người kia", exact: true })
       .click();
     await page.locator(".conversation-turn.partner").waitFor();
-    await page.getByRole("button", { name: "新着 1件を見る" }).waitFor();
-    await page.locator(".secretary-action").getByText("新着を見る", { exact: true }).waitFor();
-    await page.locator(".secretary-action").click();
+    await page.getByRole("button", { name: "新着 1件を見る" }).click();
     assert.equal(await page.locator(".room-new-message").count(), 0);
     await page.screenshot({ path: "/tmp/studio-room.png", fullPage: true });
-    assert.equal(await guest.getByLabel("あなたの言語").inputValue(), "vi");
+    assert.equal(await guest.getByLabel("Ngôn ngữ của bạn").inputValue(), "vi");
     await guest.reload();
-    await guest.getByText("2人の部屋", { exact: true }).waitFor();
+    await guest.getByText("Phòng 2 người", { exact: true }).waitFor();
     assert.equal(await guest.locator(".conversation-turn").count(), 0);
+    await guest.close();
+    await page.getByText("1人の部屋", { exact: true }).waitFor();
+    await page.getByRole("status").getByText("リンさんが退室しました。").waitFor();
+    assert.equal(
+      await page.locator(".room-member").filter({ hasText: "リン" }).count(),
+      0,
+    );
     console.log(
-      "PASS: named participants, new-message notification/assistant action, Japanese/Vietnamese reply, real WebSocket relay/ack, guest-language setup, ephemeral room history",
+      "PASS: room entry, member count 1→2→1, named participants, join/leave notices, new-message notification/mark as read, Japanese/Vietnamese reply, Supabase Realtime relay/ack, guest-language setup, ephemeral room history",
     );
     assert.deepEqual(errors, []);
     console.log("PASS: no browser runtime exceptions");
   } finally {
     if (browser) await browser.close();
     app.kill();
-    ws.kill();
   }
 })().catch((e) => {
   console.error(e);
