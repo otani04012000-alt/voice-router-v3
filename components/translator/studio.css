@@ -532,10 +532,7 @@ to{opacity:1;transform:none}
   background-size:auto,auto,96px 84px;
   background-attachment:fixed,fixed,fixed;
 }
-.honyaku .language-bar{min-height:126px}
 .honyaku .voice-router-core canvas{filter:saturate(1.18) contrast(1.05)}
-@media (min-width:960px){.honyaku .language-bar{min-height:160px}}
 @media (max-width:600px){
   .honyaku{background-size:auto,auto,72px 63px}
-  .honyaku .language-bar{min-height:112px;padding-bottom:27px}
 }
