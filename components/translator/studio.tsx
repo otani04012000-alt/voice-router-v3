@@ -553,6 +553,8 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
       );
   const routerState: RouterVisualState = busy
     ? "translating"
+    : voice.speaking
+      ? "speaking"
     : voice.micPhase === "ending" || voice.micPhase === "stopping"
       ? "listening"
     : voice.listening
@@ -564,6 +566,8 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
         : "idle";
   const routerPhaseLabel = busy
     ? uiText("ことばを翻訳しています。")
+    : voice.speaking
+      ? uiText("訳文を読み上げています")
     : voice.micPhase === "ending"
       ? uiText("まもなくマイクが切れます")
       : voice.micPhase === "stopping"

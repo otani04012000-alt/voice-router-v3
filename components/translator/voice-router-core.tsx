@@ -3,7 +3,7 @@
 import { useEffect, useRef, type RefObject } from "react";
 import type { VoiceSignal } from "./use-voice";
 
-export type RouterVisualState = "idle" | "listening" | "ending" | "stopped" | "translating" | "delivered";
+export type RouterVisualState = "idle" | "listening" | "ending" | "stopped" | "translating" | "speaking" | "delivered";
 
 type Props = {
   state: RouterVisualState;
@@ -79,8 +79,17 @@ export default function VoiceRouterCore({
       if (state === "ending") return { main: "255,174,72", hot: "255,238,191" };
       if (state === "stopped") return { main: "95,227,154", hot: "226,255,236" };
       if (state === "translating") return { main: "226,178,255", hot: "255,235,187" };
+      if (state === "speaking") return { main: "255,119,198", hot: "206,255,246" };
       if (state === "delivered") return { main: "95,227,154", hot: "232,255,220" };
       return { main: "232,201,106", hot: "255,242,194" };
+    };
+
+    const accentColors = () => {
+      if (state === "listening") return ["95,212,255", "86,239,207", "194,135,255", "255,126,190"];
+      if (state === "translating") return ["226,178,255", "255,196,104", "92,224,255", "255,111,188"];
+      if (state === "speaking") return ["255,119,198", "106,224,255", "116,242,190", "255,209,103"];
+      if (state === "delivered" || state === "stopped") return ["95,227,154", "106,224,255", "234,163,255", "255,211,111"];
+      return ["232,201,106", "96,205,230", "180,128,236", "232,116,174"];
     };
 
     const line = (
@@ -140,12 +149,13 @@ export default function VoiceRouterCore({
       const active = state === "listening";
       const idleBreath = 0.035 + (Math.sin(now * 0.0017) + 1) * 0.018;
       const closing = state === "ending" ? Math.min(1, elapsed / 1350) : 0;
-      const targetEnergy = active ? Math.max(live.level, idleBreath) : state === "ending" ? 0.2 * (1 - closing) : state === "stopped" ? 0.015 : state === "translating" ? 0.32 : state === "delivered" ? 0.13 : idleBreath;
+      const targetEnergy = active ? Math.max(live.level, idleBreath) : state === "ending" ? 0.2 * (1 - closing) : state === "stopped" ? 0.015 : state === "translating" ? 0.32 : state === "speaking" ? 0.24 : state === "delivered" ? 0.13 : idleBreath;
       energy += (targetEnergy - energy) * 0.16;
       low += ((active ? live.low : idleBreath * 0.7) - low) * 0.13;
       mid += ((active ? live.mid : idleBreath) - mid) * 0.13;
       high += ((active ? live.high : idleBreath * 0.55) - high) * 0.13;
       const { main, hot } = palette();
+      const accents = accentColors();
       const centerX = width / 2;
       const centerY = height / 2;
       const coreRadius = Math.min(40, Math.max(25, height * 0.34));
@@ -160,7 +170,7 @@ export default function VoiceRouterCore({
       context.fillRect(0, 0, width, height);
 
       for (const particle of particles) {
-        const pace = state === "translating" ? 4.2 : active ? 1.4 + energy * 4 : 1;
+        const pace = state === "translating" ? 4.2 : state === "speaking" ? 2.8 : active ? 1.4 + energy * 4 : 1;
         const x = ((particle.x + now * particle.speed * pace) % 1) * width;
         const wave = Math.sin(now * 0.0014 + particle.phase) * (3 + energy * 10);
         const y = centerY + particle.lane * height * 0.22 + wave;
@@ -197,10 +207,10 @@ export default function VoiceRouterCore({
         context.stroke();
       }
 
-      if (state === "translating" || state === "delivered") {
-        const packetCount = state === "translating" ? 7 : 3;
+      if (state === "translating" || state === "speaking" || state === "delivered") {
+        const packetCount = state === "translating" ? 7 : state === "speaking" ? 6 : 3;
         for (let index = 0; index < packetCount; index++) {
-          const progress = ((elapsed * (state === "translating" ? 0.00055 : 0.00028) + index / packetCount) % 1);
+          const progress = ((elapsed * (state === "translating" ? 0.00055 : state === "speaking" ? 0.00042 : 0.00028) + index / packetCount) % 1);
           const x = width * (0.05 + progress * 0.9);
           const y = centerY + Math.sin(progress * Math.PI) * -8;
           const packetGlow = context.createRadialGradient(x, y, 0, x, y, 8);
@@ -226,31 +236,54 @@ export default function VoiceRouterCore({
       context.setLineDash([]);
       context.restore();
 
-      const lobes = state === "translating" ? 10 : state === "delivered" ? 8 : 7;
+      const lobes = state === "translating" ? 10 : state === "speaking" ? 9 : state === "delivered" ? 8 : 7;
       const closeScale = state === "ending" ? 1 - closing * 0.48 : state === "stopped" ? 0.52 : 1;
       const radius = coreRadius * closeScale * (1 + energy * 0.34 + Math.min(0.16, live.peak * 0.14));
+      // A woven, asymmetric voice form: the signal bends colored strands instead
+      // of inflating another circular status lamp.
+      context.save();
+      context.globalCompositeOperation = "screen";
+      for (let strand = 0; strand < 9; strand++) {
+        const color = accents[strand % accents.length];
+        const strandPhase = strand * 0.71 + now * (0.00018 + high * 0.0011);
+        context.beginPath();
+        for (let index = 0; index <= 72; index++) {
+          const angle = index / 72 * TAU;
+          const fold = Math.sin(angle * lobes + strandPhase) * (3 + mid * 11);
+          const warp = Math.sin(angle * 3 - now * 0.0007 + strand) * (4 + low * 12);
+          const r = radius * (0.66 + strand * 0.055) + fold;
+          const x = centerX + Math.cos(angle) * r + Math.sin(angle * 2 + strandPhase) * (5 + energy * 13);
+          const y = centerY + Math.sin(angle) * r * (0.48 + strand * 0.025) + warp * 0.42;
+          if (index === 0) context.moveTo(x, y);
+          else context.lineTo(x, y);
+        }
+        context.strokeStyle = `rgba(${color},${0.24 + energy * 0.58})`;
+        context.lineWidth = strand % 3 === 0 ? 1.7 : 0.8;
+        context.shadowColor = `rgba(${color},0.9)`;
+        context.shadowBlur = 7 + energy * 22;
+        context.stroke();
+      }
+      context.restore();
+
       context.beginPath();
-      for (let index = 0; index <= 96; index++) {
-        const angle = (index / 96) * TAU;
-        const voiceShape = Math.sin(angle * lobes + now * (0.0018 + high * 0.007)) * (2.2 + mid * 8);
-        const lowPulse = Math.sin(angle * 3 - now * 0.001) * low * 7;
-        const r = radius + voiceShape + lowPulse;
-        const x = centerX + Math.cos(angle) * r;
-        const y = centerY + Math.sin(angle) * r * (0.86 + high * 0.2);
+      for (let index = 0; index <= 12; index++) {
+        const angle = index / 12 * TAU;
+        const crystal = radius * (index % 2 === 0 ? 0.32 : 0.18) * (1 + energy * 0.42);
+        const x = centerX + Math.cos(angle) * crystal;
+        const y = centerY + Math.sin(angle) * crystal * 0.66;
         if (index === 0) context.moveTo(x, y);
         else context.lineTo(x, y);
       }
       context.closePath();
-      const body = context.createRadialGradient(centerX - radius * 0.32, centerY - radius * 0.4, 1, centerX, centerY, radius * 1.35);
-      body.addColorStop(0, `rgba(${hot},0.96)`);
-      body.addColorStop(0.28, `rgba(${main},0.88)`);
-      body.addColorStop(0.7, `rgba(${main},0.3)`);
-      body.addColorStop(1, `rgba(${main},0.03)`);
-      context.fillStyle = body;
-      context.shadowColor = `rgba(${main},0.82)`;
-      context.shadowBlur = 26 + energy * 46;
+      const core = context.createLinearGradient(centerX - radius, centerY, centerX + radius, centerY);
+      core.addColorStop(0, `rgba(${accents[1]},${0.2 + energy * 0.28})`);
+      core.addColorStop(0.48, "rgba(8,8,7,0.94)");
+      core.addColorStop(1, `rgba(${accents[3]},${0.2 + energy * 0.3})`);
+      context.fillStyle = core;
       context.fill();
-      context.shadowBlur = 0;
+      context.strokeStyle = `rgba(${hot},${0.52 + energy * 0.36})`;
+      context.lineWidth = 0.9;
+      context.stroke();
 
       const nodeCount = 12;
       for (let index = 0; index < nodeCount; index++) {
