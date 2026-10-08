@@ -204,13 +204,20 @@ export default function VoiceRouterCore({
           const phi = strand.phase
             + Math.sin(theta * 2 + t * 0.34 + strand.fold * 3) * (0.36 + mid * 0.72)
             + Math.sin(theta * 5 - t * 0.22) * (0.08 + high * 0.2);
-          const major = base * (0.6 + Math.sin(theta * 3 + strand.phase) * (0.055 + mid * 0.06));
+          // The shared silhouette deliberately avoids a perfect torus: three broad
+          // folds and five smaller bends keep the field asymmetrical and alive.
+          const silhouette = 1
+            + Math.sin(theta * 3 + t * 0.13 + 0.65) * (0.14 + mid * 0.05)
+            + Math.sin(theta * 5 - t * 0.09 - 1.1) * (0.075 + high * 0.035);
+          const major = base * (0.58 * silhouette + Math.sin(theta * 3 + strand.phase) * (0.045 + mid * 0.05));
           const tube = base * (0.255 + strand.depth * 0.13 + energy * 0.075) * strand.fold;
           let x = (major + tube * Math.cos(phi)) * Math.cos(theta);
           let y = tube * Math.sin(phi) * 0.9;
           let z = (major + tube * Math.cos(phi)) * Math.sin(theta);
-          x += Math.sin(theta * 3 + strand.phase * 1.7 + t * 0.42) * base * (0.065 + mid * 0.09);
-          y += Math.sin(theta * 2 - strand.phase + t * 0.28) * base * (0.1 + low * 0.11);
+          x += Math.sin(theta * 2 + 0.8) * base * (0.1 + mid * 0.06);
+          x += Math.sin(theta * 3 + strand.phase * 1.7 + t * 0.42) * base * (0.055 + mid * 0.08);
+          y += Math.sin(theta * 3 - 0.45) * base * (0.13 + low * 0.08);
+          y += Math.sin(theta * 2 - strand.phase + t * 0.28) * base * (0.075 + low * 0.09);
           z += Math.cos(theta * 4 + strand.phase - t * 0.36) * base * (0.055 + high * 0.1);
           x *= pump;
           y *= pump;
