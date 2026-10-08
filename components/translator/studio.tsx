@@ -567,7 +567,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
     : voice.speaking
       ? "speaking"
     : voice.micPhase === "ending" || voice.micPhase === "stopping"
-      ? "listening"
+      ? "ending"
     : voice.listening
       ? "listening"
       : voice.micPhase === "stopped"
@@ -1216,7 +1216,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
           </div>
           <section className="voice-landscape" aria-label={uiText("音声入力の状態")}>
             <div className="voice-landscape-heading">
-              <span>VOICE FIELD</span>
+              <span>{uiText("声の庭")}</span>
               <strong>{routerPhaseLabel}</strong>
             </div>
             <VoiceRouterCore
@@ -1226,6 +1226,10 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
               sourceLabel={LANGUAGES[source].native}
               targetLabel={LANGUAGES[target].native}
               phaseLabel={routerPhaseLabel}
+              waitingLabel={uiText("声を待っています")}
+              quietLabel={uiText("もう少し近くで話してください")}
+              heardLabel={uiText("声が届いています")}
+              levelLabel={uiText("声の強さ")}
             />
           </section>
           {turns.length > 0 && (

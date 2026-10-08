@@ -11,6 +11,10 @@ type Props = {
   sourceLabel: string;
   targetLabel: string;
   phaseLabel: string;
+  waitingLabel?: string;
+  quietLabel?: string;
+  heardLabel?: string;
+  levelLabel?: string;
   variant?: "compact" | "landscape";
 };
 
@@ -30,6 +34,14 @@ type FieldStrand = {
   color: number;
 };
 
+type AssistMote = {
+  homeX: number;
+  homeY: number;
+  scatterX: number;
+  scatterY: number;
+  phase: number;
+};
+
 const TAU = Math.PI * 2;
 
 export default function VoiceRouterCore({
@@ -38,10 +50,16 @@ export default function VoiceRouterCore({
   sourceLabel,
   targetLabel,
   phaseLabel,
+  waitingLabel = "声を待っています",
+  quietLabel = "もう少し近くで話してください",
+  heardLabel = "声が届いています",
+  levelLabel = "声の強さ",
   variant = "compact",
 }: Props) {
   const shell = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
+  const assistHint = useRef<HTMLElement>(null);
+  const assistMeter = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     const host = shell.current;
@@ -65,6 +83,37 @@ export default function VoiceRouterCore({
       depth: ((index * 53) % 97) / 97,
       color: index % 4,
     }));
+    // The attached anamorphosis assembles scattered particles into one readable
+    // form only at the useful viewpoint. Here they assemble into a microphone
+    // while we are waiting for speech, then loosen back into the voice field.
+    const assistMotes: AssistMote[] = Array.from({ length: 104 }, (_, index) => {
+      let homeX = 0;
+      let homeY = 0;
+      if (index < 60) {
+        const angle = index / 60 * TAU;
+        homeX = Math.cos(angle) * 0.16;
+        homeY = Math.sin(angle) * 0.25 - 0.08;
+      } else if (index < 82) {
+        const progress = (index - 60) / 21;
+        const side = index % 2 ? -1 : 1;
+        homeX = side * (0.25 - progress * 0.25);
+        homeY = -0.02 + progress * 0.34;
+      } else if (index < 92) {
+        const progress = (index - 82) / 9;
+        homeY = 0.28 + progress * 0.15;
+      } else {
+        const progress = (index - 92) / 11;
+        homeX = (progress - 0.5) * 0.38;
+        homeY = 0.43;
+      }
+      return {
+        homeX,
+        homeY,
+        scatterX: Math.sin(index * 12.9898) * (0.34 + (index % 7) * 0.055),
+        scatterY: Math.cos(index * 7.233) * (0.25 + (index % 5) * 0.06),
+        phase: (index * 2.399963229728653) % TAU,
+      };
+    });
     let width = 1;
     let height = 1;
     let frame = 0;
@@ -75,6 +124,7 @@ export default function VoiceRouterCore({
     let high = 0;
     let visible = true;
     let lastLandscapeFrame = 0;
+    let lastAssistCopy = "";
 
     const resize = () => {
       const rect = host.getBoundingClientRect();
@@ -181,6 +231,24 @@ export default function VoiceRouterCore({
       const t = now * 0.001;
       const base = Math.min(width * 0.31, height * 1.04);
       const pace = state === "translating" ? 1.75 : state === "speaking" ? -1.35 : 0.58 + energy * 1.8;
+      const endingProgress = state === "ending" ? Math.min(1, elapsed / 1350) : 0;
+      const formScale = state === "idle"
+        ? 0.76
+        : state === "stopped"
+          ? 0.54
+          : state === "ending"
+            ? 1 - endingProgress * 0.46
+            : state === "delivered"
+              ? 0.88
+              : 1;
+      const juliaStrength = state === "translating"
+        ? 0.34
+        : state === "speaking"
+          ? 0.18
+          : state === "listening"
+            ? 0.07 + energy * 0.2
+            : 0.045;
+      const speakingStretch = state === "speaking" ? 1.2 : 1;
       const rotY = t * 0.16 * pace;
       const rotX = -0.46 + Math.sin(t * 0.31) * 0.11;
       const rotZ = Math.sin(t * 0.19) * 0.08;
@@ -189,7 +257,7 @@ export default function VoiceRouterCore({
       const cz = Math.cos(rotZ), sz = Math.sin(rotZ);
       const density = width < 680 ? 270 : 520;
       const points = width < 680 ? 38 : 52;
-      const pump = 1 + low * 0.23 + energy * 0.15;
+      const pump = formScale * (1 + low * 0.23 + energy * 0.15);
 
       context.save();
       context.globalCompositeOperation = "screen";
@@ -201,16 +269,29 @@ export default function VoiceRouterCore({
         context.beginPath();
         for (let point = 0; point <= points; point++) {
           const theta = point / points * TAU;
+          // A real Julia-style z²+c iteration supplies continuous, related
+          // surprises instead of a collection of unrelated canned animations.
+          let jr = Math.cos(theta) * (0.66 + strand.depth * 0.16);
+          let ji = Math.sin(theta * 2 + strand.phase) * (0.42 + strand.fold * 0.1);
+          const cr = -0.72 + Math.sin(t * 0.11) * 0.055;
+          const ci = 0.22 + Math.cos(t * 0.09) * 0.065;
+          for (let iteration = 0; iteration < 3; iteration++) {
+            const nextR = jr * jr - ji * ji + cr;
+            ji = Math.max(-2, Math.min(2, 2 * jr * ji + ci));
+            jr = Math.max(-2, Math.min(2, nextR));
+          }
+          const juliaFold = Math.sin((jr + ji) * 2.7 + strand.phase + t * 0.17);
           const phi = strand.phase
             + Math.sin(theta * 2 + t * 0.34 + strand.fold * 3) * (0.36 + mid * 0.72)
-            + Math.sin(theta * 5 - t * 0.22) * (0.08 + high * 0.2);
+            + Math.sin(theta * 5 - t * 0.22) * (0.08 + high * 0.2)
+            + juliaFold * juliaStrength;
           // The shared silhouette deliberately avoids a perfect torus: three broad
           // folds and five smaller bends keep the field asymmetrical and alive.
           const silhouette = 1
             + Math.sin(theta * 3 + t * 0.13 + 0.65) * (0.14 + mid * 0.05)
             + Math.sin(theta * 5 - t * 0.09 - 1.1) * (0.075 + high * 0.035);
           const major = base * (0.58 * silhouette + Math.sin(theta * 3 + strand.phase) * (0.045 + mid * 0.05));
-          const tube = base * (0.255 + strand.depth * 0.13 + energy * 0.075) * strand.fold;
+          const tube = base * (0.255 + strand.depth * 0.13 + energy * 0.075 + Math.abs(juliaFold) * juliaStrength * 0.08) * strand.fold;
           let x = (major + tube * Math.cos(phi)) * Math.cos(theta);
           let y = tube * Math.sin(phi) * 0.9;
           let z = (major + tube * Math.cos(phi)) * Math.sin(theta);
@@ -219,7 +300,7 @@ export default function VoiceRouterCore({
           y += Math.sin(theta * 3 - 0.45) * base * (0.13 + low * 0.08);
           y += Math.sin(theta * 2 - strand.phase + t * 0.28) * base * (0.075 + low * 0.09);
           z += Math.cos(theta * 4 + strand.phase - t * 0.36) * base * (0.055 + high * 0.1);
-          x *= pump;
+          x *= pump * speakingStretch;
           y *= pump;
           z *= pump;
 
@@ -240,6 +321,31 @@ export default function VoiceRouterCore({
         context.strokeStyle = `rgba(${color},${0.022 + front * 0.12 + energy * 0.08})`;
         context.lineWidth = 0.28 + front * 0.72 + (strandIndex % 41 === 0 ? 0.5 : 0);
         context.stroke();
+      }
+
+      if (state === "listening") {
+        const measured = Math.min(1, Math.max(0, signal.current.level * 3.2));
+        const assemble = Math.max(0.08, 1 - measured * 1.35);
+        context.save();
+        context.globalCompositeOperation = "screen";
+        for (let index = 0; index < assistMotes.length; index++) {
+          const mote = assistMotes[index];
+          const flutter = 0.025 + measured * 0.16;
+          const homeX = mote.homeX * base * 0.72;
+          const homeY = mote.homeY * base * 0.72;
+          const looseX = mote.scatterX * base + Math.sin(t * 2.2 + mote.phase) * base * flutter;
+          const looseY = mote.scatterY * base + Math.cos(t * 1.8 + mote.phase) * base * flutter;
+          const x = centerX + homeX * assemble + looseX * (1 - assemble);
+          const y = centerY + homeY * assemble + looseY * (1 - assemble);
+          const size = 0.7 + (index % 4) * 0.28 + measured * 1.5;
+          context.fillStyle = `rgba(${index % 3 === 0 ? hot : main},${0.18 + assemble * 0.5 + measured * 0.18})`;
+          context.shadowColor = `rgba(${main},0.8)`;
+          context.shadowBlur = 4 + measured * 12;
+          context.beginPath();
+          context.arc(x, y, size, 0, TAU);
+          context.fill();
+        }
+        context.restore();
       }
 
       for (let index = 0; index < 9; index++) {
@@ -279,6 +385,29 @@ export default function VoiceRouterCore({
       const accents = accentColors();
       const centerX = width / 2;
       const centerY = height / 2;
+      if (variant === "landscape") {
+        const measuredLevel = state === "listening" ? Math.min(1, live.level * 3.2) : 0;
+        const inputState = state !== "listening"
+          ? state
+          : measuredLevel >= 0.12
+            ? "heard"
+            : elapsed > 1400
+              ? "quiet"
+              : "waiting";
+        const assistCopy = inputState === "heard"
+          ? heardLabel
+          : inputState === "quiet"
+            ? quietLabel
+            : inputState === "waiting"
+              ? waitingLabel
+              : phaseLabel;
+        host.dataset.input = inputState;
+        assistMeter.current?.style.setProperty("--voice-level", measuredLevel.toFixed(3));
+        if (assistHint.current && assistCopy !== lastAssistCopy) {
+          assistHint.current.textContent = assistCopy;
+          lastAssistCopy = assistCopy;
+        }
+      }
       const coreRadius = variant === "landscape"
         ? Math.min(180, Math.max(72, Math.min(width * 0.25, height * 0.42)))
         : Math.min(40, Math.max(25, height * 0.34));
@@ -525,7 +654,7 @@ export default function VoiceRouterCore({
       visibilityObserver.disconnect();
       if (frame) cancelAnimationFrame(frame);
     };
-  }, [signal, state, variant]);
+  }, [heardLabel, phaseLabel, quietLabel, signal, state, variant, waitingLabel]);
 
   return (
     <div ref={shell} className={`voice-router-core voice-router-core--${variant}`} data-state={state} aria-label={`${sourceLabel}から${targetLabel}へ、${phaseLabel}`}>
@@ -535,6 +664,15 @@ export default function VoiceRouterCore({
         <strong>{phaseLabel}</strong>
         <span>{targetLabel}</span>
       </div>
+      {variant === "landscape" && (
+        <div className="voice-router-assist" aria-live="polite">
+          <span className="voice-router-level-label">{levelLabel}</span>
+          <span ref={assistMeter} className="voice-router-level" aria-hidden="true">
+            {Array.from({ length: 10 }, (_, index) => <i key={index} />)}
+          </span>
+          <b ref={assistHint}>{phaseLabel}</b>
+        </div>
+      )}
     </div>
   );
 }
