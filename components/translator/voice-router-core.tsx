@@ -161,7 +161,7 @@ export default function VoiceRouterCore({
       const centerX = width / 2;
       const centerY = height / 2;
       const coreRadius = variant === "landscape"
-        ? Math.min(150, Math.max(58, Math.min(width * 0.23, height * 0.34)))
+        ? Math.min(180, Math.max(72, Math.min(width * 0.25, height * 0.42)))
         : Math.min(40, Math.max(25, height * 0.34));
 
       context.clearRect(0, 0, width, height);
@@ -256,8 +256,12 @@ export default function VoiceRouterCore({
           const fold = Math.sin(angle * lobes + strandPhase) * (3 + mid * 11);
           const warp = Math.sin(angle * 3 - now * 0.0007 + strand) * (4 + low * 12);
           const r = radius * (0.66 + strand * 0.055) + fold;
-          const x = centerX + Math.cos(angle) * r + Math.sin(angle * 2 + strandPhase) * (5 + energy * 13);
-          const y = centerY + Math.sin(angle) * r * (0.48 + strand * 0.025) + warp * 0.42;
+          const x = variant === "landscape"
+            ? centerX + Math.cos(angle) * r * 1.72 + Math.sin(angle * 3 + strandPhase) * (12 + energy * 24)
+            : centerX + Math.cos(angle) * r + Math.sin(angle * 2 + strandPhase) * (5 + energy * 13);
+          const y = variant === "landscape"
+            ? centerY + Math.sin(angle * 2 + strandPhase) * r * (0.34 + strand * 0.016) + warp * 0.78
+            : centerY + Math.sin(angle) * r * (0.48 + strand * 0.025) + warp * 0.42;
           if (index === 0) context.moveTo(x, y);
           else context.lineTo(x, y);
         }
