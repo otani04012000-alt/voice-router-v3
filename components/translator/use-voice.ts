@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { microphoneTransition, type MicrophonePhase } from "./microphone-state";
 import { LANGUAGES, type Language } from "@/lib/translation";
+import { selectSpeechVoice } from "./speech-voice";
 
 type Recognition = {
   lang: string;
@@ -67,6 +68,7 @@ export function useVoice(
   const meterContext = useRef<AudioContext | null>(null);
   const stoppedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const speechRun = useRef(0);
+  const utterance = useRef<SpeechSynthesisUtterance | null>(null);
   const textCallback = useRef(onText),
     noticeCallback = useRef(onNotice);
 
@@ -174,6 +176,7 @@ export function useVoice(
       }
       stopMeter();
       speechRun.current += 1;
+      utterance.current = null;
       window.speechSynthesis?.cancel();
     };
   }, [stopMeter]);
@@ -285,38 +288,64 @@ export function useVoice(
         return;
       }
       recognition.current?.abort();
-      const voices = window.speechSynthesis.getVoices();
-      const voice = voices.find((v) =>
-        v.lang.replace("_", "-").toLowerCase().startsWith(language),
-      );
-      if (!voice) {
-        noticeCallback.current(
-          `${LANGUAGES[language].label}の読み上げ音声が端末にありません。訳文を大きく表示して相手に見せられます。`,
-        );
-        return;
-      }
       const run = ++speechRun.current;
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = LANGUAGES[language].locale;
-      u.voice = voice;
-      u.rate = slow ? 0.7 : 0.95;
-      u.onend = () => {
+      const synthesis = window.speechSynthesis;
+      synthesis.cancel();
+
+      const play = async () => {
+        let voices = synthesis.getVoices();
+        if (voices.length === 0) {
+          voices = await new Promise<SpeechSynthesisVoice[]>((resolve) => {
+            let settled = false;
+            const finish = () => {
+              if (settled) return;
+              settled = true;
+              synthesis.removeEventListener("voiceschanged", finish);
+              resolve(synthesis.getVoices());
+            };
+            synthesis.addEventListener("voiceschanged", finish, { once: true });
+            window.setTimeout(finish, 900);
+          });
+        }
         if (speechRun.current !== run) return;
-        setSpeaking(false);
-        onFinished?.();
+
+        const locale = LANGUAGES[language].locale;
+        const selectedVoice = selectSpeechVoice(voices, locale);
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = locale;
+        if (selectedVoice) u.voice = selectedVoice;
+        u.rate = slow ? 0.7 : 0.95;
+        u.onstart = () => {
+          if (speechRun.current === run) setSpeaking(true);
+        };
+        u.onend = () => {
+          if (speechRun.current !== run) return;
+          utterance.current = null;
+          setSpeaking(false);
+          onFinished?.();
+        };
+        u.onerror = (event) => {
+          if (speechRun.current !== run) return;
+          utterance.current = null;
+          setSpeaking(false);
+          noticeCallback.current(
+            event.error === "not-allowed"
+              ? "読み上げが端末に止められました。音量を上げ、もう一度スピーカーボタンを押してください。"
+              : `${LANGUAGES[language].label}を読み上げられませんでした。訳文を大きく表示して相手に見せられます。`,
+          );
+        };
+        utterance.current = u;
+        if (synthesis.paused) synthesis.resume();
+        synthesis.speak(u);
       };
-      u.onerror = () => {
-        if (speechRun.current !== run) return;
-        setSpeaking(false);
-      };
-      setSpeaking(true);
-      window.speechSynthesis.speak(u);
+
+      void play();
     },
     [],
   );
   const silence = useCallback(() => {
     speechRun.current += 1;
+    utterance.current = null;
     window.speechSynthesis?.cancel();
     setSpeaking(false);
   }, []);
