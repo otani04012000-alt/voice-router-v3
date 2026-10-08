@@ -210,10 +210,6 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
     else presentDialog.current?.close();
   }, [present]);
   useEffect(() => {
-    if (turns.length)
-      end.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [turns.length]);
-  useEffect(() => {
     document.title = unreadCount
       ? `(${unreadCount}) ${translateUi(uiLanguage, "翻訳王")} | ${translateUi(uiLanguage, "新着")}`
       : `${translateUi(uiLanguage, "翻訳王")} | ${translateUi(uiLanguage, "ことばを越えて。")}`;
@@ -314,6 +310,13 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
     },
     onError: setNotice,
   });
+  const stopPlayback = () => {
+    if (conversationRestartTimer.current) {
+      clearTimeout(conversationRestartTimer.current);
+      conversationRestartTimer.current = null;
+    }
+    voice.silence();
+  };
   const appendTranslation = async () => {
     if (lock.current || !text.trim()) return;
     lock.current = true;
@@ -395,7 +398,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
         conversationRestartTimer.current = null;
       }
       voice.stop();
-      voice.silence();
+      stopPlayback();
     }
     setNotice(
       next
@@ -524,7 +527,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
   };
   const changeLanguage = (side: "my" | "other", value: Language) => {
     voice.stop();
-    voice.silence();
+    stopPlayback();
     setResult(null);
     if (side === "my") {
       setMyLanguage(value);
@@ -535,9 +538,10 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
     }
   };
   const reset = () => {
+    stopPlayback();
     setResult(null);
     setText("");
-    textarea.current?.focus();
+    textarea.current?.focus({ preventScroll: true });
   };
   const savedResult =
     result &&
@@ -1076,7 +1080,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                     <button
                       onClick={() =>
                         voice.speaking
-                          ? voice.silence()
+                          ? stopPlayback()
                           : voice.speak(result.translated, result.target)
                       }
                     >

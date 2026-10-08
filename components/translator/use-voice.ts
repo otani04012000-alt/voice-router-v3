@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { microphoneTransition, type MicrophonePhase } from "./microphone-state";
 import { LANGUAGES, type Language } from "@/lib/translation";
 import { selectSpeechVoice } from "./speech-voice";
+import { planSpeech, playSpeechSequence } from "./speech-playback";
 
 type Recognition = {
   lang: string;
@@ -68,6 +69,7 @@ export function useVoice(
   const meterContext = useRef<AudioContext | null>(null);
   const stoppedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const speechRun = useRef(0);
+  const cancelPlayback = useRef<(() => void) | null>(null);
   const utterance = useRef<SpeechSynthesisUtterance | null>(null);
   const textCallback = useRef(onText),
     noticeCallback = useRef(onNotice);
@@ -176,6 +178,7 @@ export function useVoice(
       }
       stopMeter();
       speechRun.current += 1;
+      cancelPlayback.current?.();
       utterance.current = null;
       window.speechSynthesis?.cancel();
     };
@@ -205,6 +208,7 @@ export function useVoice(
       return;
     }
     speechRun.current += 1;
+    cancelPlayback.current?.();
     window.speechSynthesis?.cancel();
     setSpeaking(false);
     setInterim("");
@@ -289,8 +293,12 @@ export function useVoice(
       }
       recognition.current?.abort();
       const run = ++speechRun.current;
+      cancelPlayback.current?.();
       const synthesis = window.speechSynthesis;
       synthesis.cancel();
+      const segments = planSpeech(text, slow);
+      setSpeaking(segments.length > 0);
+      if (!segments.length) return;
 
       const play = async () => {
         let voices = synthesis.getVoices();
@@ -311,32 +319,40 @@ export function useVoice(
 
         const locale = LANGUAGES[language].locale;
         const selectedVoice = selectSpeechVoice(voices, locale);
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = locale;
-        if (selectedVoice) u.voice = selectedVoice;
-        u.rate = slow ? 0.7 : 0.95;
-        u.onstart = () => {
-          if (speechRun.current === run) setSpeaking(true);
-        };
-        u.onend = () => {
+        cancelPlayback.current = playSpeechSequence(segments, (segment, ended, failed) => {
+          if (speechRun.current !== run) { failed(); return; }
+          const u = new SpeechSynthesisUtterance(segment.text);
+          u.lang = locale;
+          if (selectedVoice) u.voice = selectedVoice;
+          u.rate = segment.rate;
+          u.onstart = () => {
+            if (speechRun.current === run) setSpeaking(true);
+          };
+          u.onend = () => {
+            if (speechRun.current !== run) return;
+            utterance.current = null;
+            ended();
+          };
+          u.onerror = (event) => {
+            if (speechRun.current !== run) return;
+            failed();
+            utterance.current = null;
+            setSpeaking(false);
+            noticeCallback.current(
+              event.error === "not-allowed"
+                ? "読み上げが端末に止められました。音量を上げ、もう一度スピーカーボタンを押してください。"
+                : `${LANGUAGES[language].label}を読み上げられませんでした。訳文を大きく表示して相手に見せられます。`,
+            );
+          };
+          utterance.current = u;
+          if (synthesis.paused) synthesis.resume();
+          synthesis.speak(u);
+        }, () => {
           if (speechRun.current !== run) return;
-          utterance.current = null;
+          cancelPlayback.current = null;
           setSpeaking(false);
           onFinished?.();
-        };
-        u.onerror = (event) => {
-          if (speechRun.current !== run) return;
-          utterance.current = null;
-          setSpeaking(false);
-          noticeCallback.current(
-            event.error === "not-allowed"
-              ? "読み上げが端末に止められました。音量を上げ、もう一度スピーカーボタンを押してください。"
-              : `${LANGUAGES[language].label}を読み上げられませんでした。訳文を大きく表示して相手に見せられます。`,
-          );
-        };
-        utterance.current = u;
-        if (synthesis.paused) synthesis.resume();
-        synthesis.speak(u);
+        });
       };
 
       void play();
@@ -345,6 +361,8 @@ export function useVoice(
   );
   const silence = useCallback(() => {
     speechRun.current += 1;
+    cancelPlayback.current?.();
+    cancelPlayback.current = null;
     utterance.current = null;
     window.speechSynthesis?.cancel();
     setSpeaking(false);
