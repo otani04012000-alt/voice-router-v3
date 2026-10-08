@@ -319,6 +319,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
   };
   const appendTranslation = async () => {
     if (lock.current || !text.trim()) return;
+    const initialScrollY = window.scrollY;
     lock.current = true;
     setBusy(true);
     setNotice("");
@@ -379,6 +380,12 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
     } finally {
       lock.current = false;
       setBusy(false);
+      window.requestAnimationFrame(() => {
+        // Keep small layout shifts from nudging the conversation downward,
+        // without overriding a deliberate scroll while translation was running.
+        if (Math.abs(window.scrollY - initialScrollY) < 80)
+          window.scrollTo({ top: initialScrollY, behavior: "auto" });
+      });
     }
   };
   useEffect(() => {
