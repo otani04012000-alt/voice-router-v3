@@ -23,6 +23,13 @@ type Particle = {
   lane: number;
 };
 
+type FieldStrand = {
+  phase: number;
+  fold: number;
+  depth: number;
+  color: number;
+};
+
 const TAU = Math.PI * 2;
 
 export default function VoiceRouterCore({
@@ -52,6 +59,12 @@ export default function VoiceRouterCore({
       phase: (index * 1.73) % TAU,
       lane: (index % 3) - 1,
     }));
+    const fieldStrands: FieldStrand[] = Array.from({ length: 520 }, (_, index) => ({
+      phase: (index * 2.399963229728653) % TAU,
+      fold: 0.74 + ((index * 37) % 101) / 210,
+      depth: ((index * 53) % 97) / 97,
+      color: index % 4,
+    }));
     let width = 1;
     let height = 1;
     let frame = 0;
@@ -60,6 +73,8 @@ export default function VoiceRouterCore({
     let low = 0;
     let mid = 0;
     let high = 0;
+    let visible = true;
+    let lastLandscapeFrame = 0;
 
     const resize = () => {
       const rect = host.getBoundingClientRect();
@@ -75,6 +90,11 @@ export default function VoiceRouterCore({
     const observer = new ResizeObserver(resize);
     observer.observe(host);
     resize();
+    const visibilityObserver = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      if (visible && !frame && !reduced) frame = requestAnimationFrame(draw);
+    }, { rootMargin: "120px" });
+    if (variant === "landscape") visibilityObserver.observe(host);
 
     const palette = () => {
       if (state === "listening") return { main: "95,212,255", hot: "219,248,255" };
@@ -145,7 +165,99 @@ export default function VoiceRouterCore({
       context.restore();
     };
 
+    const drawLandscapeField = (
+      now: number,
+      elapsed: number,
+      main: string,
+      hot: string,
+      accents: string[],
+      centerX: number,
+      centerY: number,
+      energy: number,
+      low: number,
+      mid: number,
+      high: number,
+    ) => {
+      const t = now * 0.001;
+      const base = Math.min(width * 0.31, height * 1.04);
+      const pace = state === "translating" ? 1.75 : state === "speaking" ? -1.35 : 0.58 + energy * 1.8;
+      const rotY = t * 0.16 * pace;
+      const rotX = -0.46 + Math.sin(t * 0.31) * 0.11;
+      const rotZ = Math.sin(t * 0.19) * 0.08;
+      const cy = Math.cos(rotY), sy = Math.sin(rotY);
+      const cx = Math.cos(rotX), sx = Math.sin(rotX);
+      const cz = Math.cos(rotZ), sz = Math.sin(rotZ);
+      const density = width < 680 ? 270 : 520;
+      const points = width < 680 ? 38 : 52;
+      const pump = 1 + low * 0.23 + energy * 0.15;
+
+      context.save();
+      context.globalCompositeOperation = "screen";
+      context.lineCap = "round";
+      for (let strandIndex = 0; strandIndex < density; strandIndex++) {
+        const strand = fieldStrands[strandIndex];
+        const color = accents[strand.color];
+        let nearest = -2;
+        context.beginPath();
+        for (let point = 0; point <= points; point++) {
+          const theta = point / points * TAU;
+          const phi = strand.phase
+            + Math.sin(theta * 2 + t * 0.34 + strand.fold * 3) * (0.36 + mid * 0.72)
+            + Math.sin(theta * 5 - t * 0.22) * (0.08 + high * 0.2);
+          const major = base * (0.6 + Math.sin(theta * 3 + strand.phase) * (0.055 + mid * 0.06));
+          const tube = base * (0.255 + strand.depth * 0.13 + energy * 0.075) * strand.fold;
+          let x = (major + tube * Math.cos(phi)) * Math.cos(theta);
+          let y = tube * Math.sin(phi) * 0.9;
+          let z = (major + tube * Math.cos(phi)) * Math.sin(theta);
+          x += Math.sin(theta * 3 + strand.phase * 1.7 + t * 0.42) * base * (0.065 + mid * 0.09);
+          y += Math.sin(theta * 2 - strand.phase + t * 0.28) * base * (0.1 + low * 0.11);
+          z += Math.cos(theta * 4 + strand.phase - t * 0.36) * base * (0.055 + high * 0.1);
+          x *= pump;
+          y *= pump;
+          z *= pump;
+
+          const x1 = x * cy - z * sy;
+          const z1 = x * sy + z * cy;
+          const y2 = y * cx - z1 * sx;
+          const z2 = y * sx + z1 * cx;
+          const x3 = x1 * cz - y2 * sz;
+          const y3 = x1 * sz + y2 * cz;
+          const perspective = 1.18 / (1.18 + z2 / (base * 3.2));
+          const px = centerX + x3 * perspective;
+          const py = centerY + y3 * perspective;
+          nearest = Math.max(nearest, z2 / base);
+          if (point === 0) context.moveTo(px, py);
+          else context.lineTo(px, py);
+        }
+        const front = Math.max(0, Math.min(1, (nearest + 1.25) / 2.5));
+        context.strokeStyle = `rgba(${color},${0.022 + front * 0.12 + energy * 0.08})`;
+        context.lineWidth = 0.28 + front * 0.72 + (strandIndex % 41 === 0 ? 0.5 : 0);
+        context.stroke();
+      }
+
+      for (let index = 0; index < 9; index++) {
+        const progress = (elapsed * (state === "translating" ? 0.00048 : state === "speaking" ? 0.00036 : 0.00016) + index / 9) % 1;
+        const angle = progress * TAU;
+        const orbit = base * (0.64 + Math.sin(angle * 3 + t) * 0.12);
+        const x = centerX + Math.cos(angle + rotY) * orbit;
+        const y = centerY + Math.sin(angle * 2 + rotX) * base * 0.23;
+        const glow = context.createRadialGradient(x, y, 0, x, y, 8 + energy * 10);
+        glow.addColorStop(0, `rgba(${index % 3 === 0 ? hot : main},${0.45 + energy * 0.4})`);
+        glow.addColorStop(1, `rgba(${main},0)`);
+        context.fillStyle = glow;
+        context.fillRect(x - 18, y - 18, 36, 36);
+      }
+      context.restore();
+    };
+
     const draw = (now: number) => {
+      frame = 0;
+      if (variant === "landscape" && !visible) return;
+      if (variant === "landscape" && now - lastLandscapeFrame < 31 && !reduced) {
+        frame = requestAnimationFrame(draw);
+        return;
+      }
+      if (variant === "landscape") lastLandscapeFrame = now;
       const elapsed = now - start;
       const live = signal.current;
       const active = state === "listening";
@@ -182,6 +294,23 @@ export default function VoiceRouterCore({
         const alpha = (0.18 + energy * 0.3) * (1 - distance * 0.45);
         context.fillStyle = `rgba(${main},${alpha})`;
         context.fillRect(x, y, particle.size + energy * 1.8, particle.size + energy * 1.8);
+      }
+
+      if (variant === "landscape") {
+        drawLandscapeField(now, elapsed, main, hot, accents, centerX, centerY, energy, low, mid, high);
+        if (state === "ending") {
+          const countdownRadius = Math.max(5, Math.min(height * 0.42, 82) * (1 - closing * 0.9));
+          context.beginPath();
+          context.arc(centerX, centerY, countdownRadius, 0, TAU);
+          context.strokeStyle = `rgba(${main},${0.95 - closing * 0.24})`;
+          context.lineWidth = 4 + closing * 3;
+          context.shadowColor = `rgba(${main},0.9)`;
+          context.shadowBlur = 20;
+          context.stroke();
+          context.shadowBlur = 0;
+        }
+        if (!reduced && visible) frame = requestAnimationFrame(draw);
+        return;
       }
 
       for (let lane = -2; lane <= 2; lane++) {
@@ -256,12 +385,8 @@ export default function VoiceRouterCore({
           const fold = Math.sin(angle * lobes + strandPhase) * (3 + mid * 11);
           const warp = Math.sin(angle * 3 - now * 0.0007 + strand) * (4 + low * 12);
           const r = radius * (0.66 + strand * 0.055) + fold;
-          const x = variant === "landscape"
-            ? centerX + Math.cos(angle) * r * 1.72 + Math.sin(angle * 3 + strandPhase) * (12 + energy * 24)
-            : centerX + Math.cos(angle) * r + Math.sin(angle * 2 + strandPhase) * (5 + energy * 13);
-          const y = variant === "landscape"
-            ? centerY + Math.sin(angle * 2 + strandPhase) * r * (0.34 + strand * 0.016) + warp * 0.78
-            : centerY + Math.sin(angle) * r * (0.48 + strand * 0.025) + warp * 0.42;
+          const x = centerX + Math.cos(angle) * r + Math.sin(angle * 2 + strandPhase) * (5 + energy * 13);
+          const y = centerY + Math.sin(angle) * r * (0.48 + strand * 0.025) + warp * 0.42;
           if (index === 0) context.moveTo(x, y);
           else context.lineTo(x, y);
         }
@@ -390,6 +515,7 @@ export default function VoiceRouterCore({
     draw(performance.now());
     return () => {
       observer.disconnect();
+      visibilityObserver.disconnect();
       if (frame) cancelAnimationFrame(frame);
     };
   }, [signal, state, variant]);
