@@ -380,12 +380,14 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
     } finally {
       lock.current = false;
       setBusy(false);
-      window.requestAnimationFrame(() => {
-        // Keep small layout shifts from nudging the conversation downward,
-        // without overriding a deliberate scroll while translation was running.
-        if (Math.abs(window.scrollY - initialScrollY) < 80)
-          window.scrollTo({ top: initialScrollY, behavior: "auto" });
-      });
+      window.requestAnimationFrame(() =>
+        window.requestAnimationFrame(() => {
+          // Wait until React has committed both the result and the idle state.
+          // Preserve deliberate scrolling, but cancel small layout nudges.
+          if (Math.abs(window.scrollY - initialScrollY) < 80)
+            window.scrollTo({ top: initialScrollY, behavior: "auto" });
+        }),
+      );
     }
   };
   useEffect(() => {
