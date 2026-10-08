@@ -122,7 +122,7 @@ export default function VoiceRouterCore({
     let low = 0;
     let mid = 0;
     let high = 0;
-    let visible = true;
+    let visible = !document.hidden;
     let lastLandscapeFrame = 0;
     let lastAssistCopy = "";
 
@@ -140,11 +140,11 @@ export default function VoiceRouterCore({
     const observer = new ResizeObserver(resize);
     observer.observe(host);
     resize();
-    const visibilityObserver = new IntersectionObserver(([entry]) => {
-      visible = entry.isIntersecting;
+    const handleVisibility = () => {
+      visible = !document.hidden;
       if (visible && !frame && !reduced) frame = requestAnimationFrame(draw);
-    }, { rootMargin: "120px" });
-    if (variant === "landscape") visibilityObserver.observe(host);
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
 
     const palette = () => {
       if (state === "listening") return { main: "95,212,255", hot: "219,248,255" };
@@ -651,7 +651,7 @@ export default function VoiceRouterCore({
     draw(performance.now());
     return () => {
       observer.disconnect();
-      visibilityObserver.disconnect();
+      document.removeEventListener("visibilitychange", handleVisibility);
       if (frame) cancelAnimationFrame(frame);
     };
   }, [heardLabel, phaseLabel, quietLabel, signal, state, variant, waitingLabel]);
