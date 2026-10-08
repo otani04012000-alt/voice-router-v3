@@ -11,6 +11,7 @@ type Props = {
   sourceLabel: string;
   targetLabel: string;
   phaseLabel: string;
+  variant?: "compact" | "landscape";
 };
 
 type Particle = {
@@ -30,6 +31,7 @@ export default function VoiceRouterCore({
   sourceLabel,
   targetLabel,
   phaseLabel,
+  variant = "compact",
 }: Props) {
   const shell = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -158,7 +160,9 @@ export default function VoiceRouterCore({
       const accents = accentColors();
       const centerX = width / 2;
       const centerY = height / 2;
-      const coreRadius = Math.min(40, Math.max(25, height * 0.34));
+      const coreRadius = variant === "landscape"
+        ? Math.min(150, Math.max(58, Math.min(width * 0.23, height * 0.34)))
+        : Math.min(40, Math.max(25, height * 0.34));
 
       context.clearRect(0, 0, width, height);
 
@@ -384,10 +388,10 @@ export default function VoiceRouterCore({
       observer.disconnect();
       if (frame) cancelAnimationFrame(frame);
     };
-  }, [signal, state]);
+  }, [signal, state, variant]);
 
   return (
-    <div ref={shell} className="voice-router-core" data-state={state} aria-label={`${sourceLabel}から${targetLabel}へ、${phaseLabel}`}>
+    <div ref={shell} className={`voice-router-core voice-router-core--${variant}`} data-state={state} aria-label={`${sourceLabel}から${targetLabel}へ、${phaseLabel}`}>
       <canvas ref={canvas} aria-hidden="true" />
       <div className="voice-router-readout" aria-hidden="true">
         <span>{sourceLabel}</span>

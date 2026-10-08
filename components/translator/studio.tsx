@@ -1214,6 +1214,20 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
               <i className={engine === "unavailable" ? "offline" : ""} />
             </span>
           </div>
+          <section className="voice-landscape" aria-label={uiText("音声入力の状態")}>
+            <div className="voice-landscape-heading">
+              <span>VOICE FIELD</span>
+              <strong>{routerPhaseLabel}</strong>
+            </div>
+            <VoiceRouterCore
+              variant="landscape"
+              state={routerState}
+              signal={voice.signal}
+              sourceLabel={LANGUAGES[source].native}
+              targetLabel={LANGUAGES[target].native}
+              phaseLabel={routerPhaseLabel}
+            />
+          </section>
           {turns.length > 0 && (
             <section className="conversation-section">
               <div className="section-heading">
