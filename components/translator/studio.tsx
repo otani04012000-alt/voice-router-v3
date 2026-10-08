@@ -319,7 +319,9 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
   };
   const appendTranslation = async () => {
     if (lock.current || !text.trim()) return;
-    const initialScrollY = window.scrollY;
+    // Clicking the submit button can nudge Chrome a few pixels before the
+    // submit handler runs. Treat that tiny offset as the top of the page.
+    const initialScrollY = window.scrollY < 80 ? 0 : window.scrollY;
     lock.current = true;
     setBusy(true);
     setNotice("");
