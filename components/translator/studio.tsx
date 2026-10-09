@@ -48,6 +48,7 @@ import { UI_LANGUAGES, isUiLanguage, resolveUiLanguage, translateUi, type UiLang
 import SecretaryPresence from "./secretary-presence";
 import VoiceRouterCore, { type RouterVisualState } from "./voice-router-core";
 import "./studio.css";
+import "./wave-theme.css";
 
 const SAVED_KEY = "honyaku.saved.v1";
 const HISTORY_KEY = "honyaku.history.v1";

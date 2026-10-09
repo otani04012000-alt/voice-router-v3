@@ -1,0 +1,107 @@
+/* 青い流線・巻き上がる波頭。背景は鮮やかに、読む場所だけ深い藍で守る。 */
+.honyaku {
+  --bg: #030e23;
+  --surface: #071a33;
+  --surface-2: #0b2644;
+  --ink: #f0f8ff;
+  --sub: #c8ddec;
+  --muted: #a9bed0;
+  --frame: rgba(122, 201, 233, .5);
+  --frame-soft: rgba(139, 201, 228, .25);
+  --gold: #e7c77e;
+  --gold-hi: #fff0b7;
+  background-color: var(--bg);
+  background-image: url('/translation-wave.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  isolation: isolate;
+}
+.honyaku::before,
+.honyaku[data-conversation-state="listening"]::before {
+  z-index: -1;
+  display: block;
+  opacity: 1;
+  background: linear-gradient(115deg, transparent 32%, #88cfff08 43%, #b7efff38 49%, #fff1b74a 50%, #81daff24 53%, transparent 66%);
+  background-size: 300% 300%;
+  -webkit-mask-image: none;
+  mask-image: none;
+  filter: none;
+  mix-blend-mode: screen;
+  animation: wave-light-crossing 18s linear infinite;
+}
+@keyframes wave-light-crossing {
+  from { background-position: 100% 0; }
+  to { background-position: 0 100%; }
+}
+.honyaku .studio-body::before { opacity: .22; }
+.honyaku .studio-body::after { display: none; }
+.honyaku .studio-header {
+  padding-left: 14px;
+  background: linear-gradient(115deg, #031226f5, #061a30ee);
+  border-bottom: 1px solid var(--frame);
+  box-shadow: 0 12px 38px #01102666;
+}
+.honyaku .wordmark { color: #fff5d5; text-shadow: 0 2px 18px #b2edff24; }
+.honyaku .language-bar {
+  background: linear-gradient(105deg, #031226f5, #102c42ef 48%, #031226f5);
+  border-color: #b4e4ed99;
+  box-shadow: 0 18px 48px -28px #010815;
+}
+.honyaku .input-card,
+.honyaku .output-card {
+  background: linear-gradient(145deg, #07182cf7, #031125f5);
+  border-color: var(--frame);
+  backdrop-filter: none;
+  box-shadow: 0 20px 56px -30px #010716, inset 0 1px #d1f5ff14;
+}
+.honyaku .input-card::before,
+.honyaku .output-card::before,
+.honyaku .language-bar::before { background-image: linear-gradient(180deg,#277da9,#a5e7ed 35%,#fff1b7 50%,#67c4df 70%,#277da9); }
+.honyaku textarea { background: #020e20; border-color: #689bc65c; color: #eff8ff; }
+.honyaku textarea::placeholder { color: #b1c5d6; }
+.honyaku .conversation-mode-toggle,
+.honyaku .voice-console { background: #031126; border-color: #70b5d066; }
+.honyaku .conversation-mode-toggle.active { background: linear-gradient(110deg,#08344b,#0c2743); border-color: #74d9e9; }
+.honyaku .speaker-switch { background: #030f22; }
+.honyaku .speaker-switch button { color: #cce1f0; }
+.honyaku .speaker-switch button.selected { color: #071628; background: linear-gradient(110deg,#f1d794,#e3bc6b); }
+.honyaku .translated-text { color: #f5fbff; text-shadow: none; }
+.honyaku .original-caption,
+.honyaku .turn-original { color: #b6cede; }
+.honyaku .result-tools { background: #031226; border-color: #a2dce64d; }
+.honyaku .result-tools button { color: #e5f5ff; }
+.honyaku .speech-control { border-color: #95deed; background: linear-gradient(110deg,#103149,#17516a); box-shadow: inset 0 1px #b9f1ff25; color: #f2fcff; }
+.honyaku .speech-control:hover { background: #b4edf3; color: #04152a; }
+.honyaku .speech-control.is-speaking { border-color: #ff77c6; background: linear-gradient(110deg,#143951,#502744); color: #fff0fa; }
+.honyaku .tone,
+.honyaku .outline-button,
+.honyaku .rail-button,
+.honyaku .icon-button { background-color: #041328ed; }
+.honyaku .tone.active { background: var(--gold); color: #06162b; }
+.honyaku .conversation-section,
+.honyaku .room-members { background: #041428f5; border-color: #93cee14d; }
+.honyaku .studio-notice { background: #061b32; border-left-color: #a5e7ed; }
+.honyaku .studio-dialog,
+.honyaku .room-entry-card,
+.honyaku .presentation-dialog { background: #041428; }
+.honyaku .voice-landscape {
+  background: radial-gradient(ellipse at 50% 72%, #152a4eaa, transparent 70%), linear-gradient(180deg,#041226f7,#060c20f5);
+  border-color: #8ad4e67d;
+  box-shadow: 0 26px 60px -32px #041325, inset 0 1px #bdeaff1a;
+}
+.honyaku .voice-landscape .voice-router-readout strong { background: #031226e8; border-color: #85bed14d; }
+.honyaku .voice-router-assist { background: linear-gradient(90deg,#041226ed,#041226b0); }
+@media (min-width:960px) { .honyaku .studio-content { gap: 20px; } }
+@media (max-width:600px) {
+  .honyaku { background-position: 42% center; }
+  .honyaku .studio-content, .honyaku .workbench { gap: 12px; }
+  .honyaku .studio-header { padding-left: 10px; background: #031226f5; backdrop-filter: none; }
+  .honyaku .input-actions { background: #031226f5; }
+  .honyaku .voice-landscape { min-height: 280px; }
+  .honyaku .voice-landscape .voice-router-core { height: 280px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .honyaku::before, .honyaku[data-conversation-state="listening"]::before { animation: none; background-position: 50% 50%; }
+}
