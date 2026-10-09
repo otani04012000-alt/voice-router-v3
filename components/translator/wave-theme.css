@@ -10,55 +10,74 @@
   --frame-soft: rgba(139, 201, 228, .25);
   --gold: #e7c77e;
   --gold-hi: #fff0b7;
-  background-color: var(--bg);
-  background-image: url('/translation-wave.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
+  background: var(--bg);
   isolation: isolate;
 }
 .honyaku::before,
 .honyaku[data-conversation-state="listening"]::before {
-  z-index: -1;
+  inset: -5vmax;
+  z-index: 0;
   display: block;
   opacity: 1;
-  background: linear-gradient(115deg, transparent 32%, #88cfff08 43%, #b7efff38 49%, #fff1b74a 50%, #81daff24 53%, transparent 66%);
-  background-size: 300% 300%;
+  background-image: linear-gradient(115deg, transparent 31%, #72cdf511 41%, #b7efff66 49%, #fff1b775 50%, #81daff38 54%, transparent 68%), url('/translation-wave.png');
+  background-size: 300% 300%, cover;
+  background-position: 100% 0, 42% 50%;
+  background-repeat: no-repeat;
   -webkit-mask-image: none;
   mask-image: none;
-  filter: none;
+  filter: saturate(1.08) contrast(1.04);
   mix-blend-mode: screen;
-  animation: wave-light-crossing 18s linear infinite;
+  transform: translate3d(-1.5%, 0, 0) scale(1.05);
+  animation: wave-field-drift 16s ease-in-out infinite alternate;
+  will-change: transform, background-position, filter;
 }
-@keyframes wave-light-crossing {
-  from { background-position: 100% 0; }
-  to { background-position: 0 100%; }
+@keyframes wave-field-drift {
+  0% { background-position: 100% 0, 40% 50%; transform:translate3d(-1.5%,0,0) scale(1.05); filter:saturate(1.02) brightness(.96); }
+  50% { background-position: 50% 50%, 52% 47%; transform:translate3d(1%,-.7%,0) scale(1.085); filter:saturate(1.16) brightness(1.06); }
+  100% { background-position: 0 100%, 45% 53%; transform:translate3d(-.4%,.8%,0) scale(1.065); filter:saturate(1.08) brightness(1); }
 }
-.honyaku .studio-body::before { opacity: .22; }
-.honyaku .studio-body::after { display: none; }
+.honyaku .studio-body { position:relative; z-index:1; }
+.honyaku .studio-rail { z-index:3; }
+.honyaku .studio-body::before { opacity: .48; }
+.honyaku .studio-body::after { display:block; opacity:.62; }
 .honyaku .studio-header {
   padding-left: 14px;
-  background-image: linear-gradient(100deg, #031226b3 0%, #061a3066 48%, #031226a6 100%), url('/translation-wave.png');
+  padding-bottom: 0;
+  background-image: linear-gradient(100deg, #031226e3 0%, #061a30b8 48%, #031226d9 100%), url('/translation-wave.png');
   background-size: auto, 880px auto;
   background-position: center, center 36%;
   border-bottom: 1px solid var(--frame);
   box-shadow: 0 12px 38px #01102666;
 }
+.honyaku .studio-header::after {
+  content: "";
+  display: block;
+  order: 5;
+  flex: 0 0 100%;
+  height: 96px;
+  margin-top: 4px;
+  background: linear-gradient(100deg, #03122636, transparent 42%, #fff1b726 50%, transparent 60%), url('/translation-wave.png') center 82% / cover no-repeat;
+  border-top: 1px solid #b4e4ed80;
+  border-bottom: 1px solid #b4e4ed80;
+  animation: wave-header-drift 12s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+@keyframes wave-header-drift {
+  from { background-position: 100% 0, 42% 82%; }
+  to { background-position: 0 100%, 58% 74%; }
+}
 .honyaku .wordmark { color: #fff5d5; text-shadow: 0 2px 18px #b2edff24; }
 .honyaku .language-bar {
-  background: linear-gradient(105deg, #031226e8, #102c42d9 48%, #031226e8);
+  background: linear-gradient(105deg, #031226d9, #102c42c9 48%, #031226d9);
   border-color: #b4e4ed99;
   box-shadow: 0 18px 48px -28px #010815;
-  backdrop-filter: none;
+  backdrop-filter: blur(7px);
 }
 .honyaku .input-card,
 .honyaku .output-card {
-  background-image: linear-gradient(90deg, #031125ed 0%, #031125e6 65%, #03112580 100%), url('/translation-wave.png');
-  background-size: auto, cover;
-  background-position: center, center 85%;
+  background: linear-gradient(145deg, #07182cd6, #031125d1);
   border-color: var(--frame);
-  backdrop-filter: none;
+  backdrop-filter: blur(8px);
   box-shadow: 0 20px 56px -30px #010716, inset 0 1px #d1f5ff14;
 }
 .honyaku .input-card::before,
@@ -92,60 +111,40 @@
 .honyaku .room-entry-card,
 .honyaku .presentation-dialog { background: #041428; }
 .honyaku .voice-landscape {
-  background-image: radial-gradient(ellipse at 50% 72%, #152a4e70, transparent 70%), linear-gradient(180deg,#04122652,#060c2080), url('/translation-wave.png');
+  background-image: radial-gradient(ellipse at 50% 72%, #152a4e55, transparent 70%), linear-gradient(180deg,#04122670,#060c208c), url('/translation-wave.png');
   background-size: auto, auto, cover;
-  background-position: center, center, center 85%;
+  background-position: center, center, 42% 58%;
   border-color: #8ad4e67d;
   box-shadow: 0 26px 60px -32px #041325, inset 0 1px #bdeaff1a;
+  animation: wave-garden-drift 12s ease-in-out infinite alternate;
 }
+@keyframes wave-garden-drift {
+  from { background-position:center,center,38% 58%; }
+  to { background-position:center,center,62% 48%; }
+}
+.honyaku .voice-landscape:has(.voice-router-core[data-state="listening"]){animation-duration:7s}
+.honyaku .voice-landscape:has(.voice-router-core[data-state="translating"]){animation-duration:5s}
+.honyaku .voice-landscape:has(.voice-router-core[data-state="speaking"]){animation-duration:6.5s}
 .honyaku .voice-landscape .voice-router-readout strong { background: #031226e8; border-color: #85bed14d; }
 .honyaku .voice-router-assist { background: linear-gradient(90deg,#041226ed,#041226b0); }
+.honyaku .voice-landscape-heading {
+  top: 0; left: 0; right: 0;
+  padding: 10px 13px;
+  background: #031226d9;
+}
+.honyaku .voice-landscape-heading strong { color: #e2f2ff; }
+.honyaku .voice-landscape .voice-router-core canvas { filter: none; }
 @media (min-width:960px) { .honyaku .studio-content { gap: 20px; } }
 @media (max-width:600px) {
-  .honyaku { background-position: 42% center; }
   .honyaku .studio-content, .honyaku .workbench { gap: 12px; }
   .honyaku .studio-header { padding-left: 10px; background-size: auto, 720px auto; background-position:center, 48% 35%; }
+  .honyaku .studio-header::after { height: 88px; background-size: 300% 300%, auto 125%; }
   .honyaku .input-actions { background: #031226df; backdrop-filter:blur(8px); }
   .honyaku .voice-landscape { min-height: 280px; }
   .honyaku .voice-landscape .voice-router-core { height: 280px; }
 }
 @media (prefers-reduced-motion:reduce) {
-  .honyaku::before, .honyaku[data-conversation-state="listening"]::before { animation: none; background-position: 50% 50%; }
-}
-
-/* 波を余白だけに閉じ込めない。上部の専用面で絵を見せ、操作面は藍で保護する。 */
-.honyaku .studio-header {
-  padding-bottom: 0;
-  box-shadow: none;
-}
-.honyaku .studio-header::after {
-  content: "";
-  display: block;
-  order: 5;
-  flex: 0 0 100%;
-  height: 96px;
-  margin-top: 4px;
-  background: url('/translation-wave.png') center 82% / cover no-repeat;
-  border-top: 1px solid #b4e4ed80;
-  border-bottom: 1px solid #b4e4ed80;
-  pointer-events: none;
-}
-.honyaku .input-card,
-.honyaku .output-card { box-shadow: none; }
-.honyaku .tone:not(.active) { color: #d3e7f4; border-color: #83bad180; }
-.honyaku .ui-language-switch button:not([aria-pressed="true"]) {
-  color: #e2f2ff;
-  background: #031226d9;
-}
-.honyaku .voice-landscape-heading {
-  top: 0; left: 0; right: 0;
-  padding: 10px 13px;
-  background: #031226e8;
-}
-.honyaku .voice-landscape-heading strong { color: #e2f2ff; }
-.honyaku .voice-landscape .voice-router-core canvas { filter: none; }
-@media (max-width:600px) {
-  .honyaku { background-attachment: scroll; background-size: auto 100dvh; background-repeat: repeat-y; }
-  .honyaku .studio-header::after { height: 88px; background-size: 100% auto; }
-  .honyaku .input-actions { backdrop-filter: none; }
+  .honyaku::before, .honyaku[data-conversation-state="listening"]::before { animation: none; background-position: 50% 50%, 48% 50%; transform:scale(1.05); }
+  .honyaku .voice-landscape,
+  .honyaku .studio-header::after { animation:none; }
 }
