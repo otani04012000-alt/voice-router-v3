@@ -39,7 +39,7 @@
 .honyaku .studio-body::after { display: none; }
 .honyaku .studio-header {
   padding-left: 14px;
-  background-image: linear-gradient(100deg, #031226e3 0%, #061a30b8 48%, #031226d9 100%), url('/translation-wave.png');
+  background-image: linear-gradient(100deg, #031226b3 0%, #061a3066 48%, #031226a6 100%), url('/translation-wave.png');
   background-size: auto, 880px auto;
   background-position: center, center 36%;
   border-bottom: 1px solid var(--frame);
@@ -50,13 +50,15 @@
   background: linear-gradient(105deg, #031226e8, #102c42d9 48%, #031226e8);
   border-color: #b4e4ed99;
   box-shadow: 0 18px 48px -28px #010815;
-  backdrop-filter: blur(7px);
+  backdrop-filter: none;
 }
 .honyaku .input-card,
 .honyaku .output-card {
-  background: linear-gradient(145deg, #07182ce6, #031125e3);
+  background-image: linear-gradient(90deg, #031125ed 0%, #031125e6 65%, #03112580 100%), url('/translation-wave.png');
+  background-size: auto, cover;
+  background-position: center, center 85%;
   border-color: var(--frame);
-  backdrop-filter: blur(8px);
+  backdrop-filter: none;
   box-shadow: 0 20px 56px -30px #010716, inset 0 1px #d1f5ff14;
 }
 .honyaku .input-card::before,
@@ -90,9 +92,9 @@
 .honyaku .room-entry-card,
 .honyaku .presentation-dialog { background: #041428; }
 .honyaku .voice-landscape {
-  background-image: radial-gradient(ellipse at 50% 72%, #152a4e70, transparent 70%), linear-gradient(180deg,#041226b8,#060c20d4), url('/translation-wave.png');
+  background-image: radial-gradient(ellipse at 50% 72%, #152a4e70, transparent 70%), linear-gradient(180deg,#04122652,#060c2080), url('/translation-wave.png');
   background-size: auto, auto, cover;
-  background-position: center, center, center 58%;
+  background-position: center, center, center 85%;
   border-color: #8ad4e67d;
   box-shadow: 0 26px 60px -32px #041325, inset 0 1px #bdeaff1a;
 }
@@ -109,4 +111,41 @@
 }
 @media (prefers-reduced-motion:reduce) {
   .honyaku::before, .honyaku[data-conversation-state="listening"]::before { animation: none; background-position: 50% 50%; }
+}
+
+/* 波を余白だけに閉じ込めない。上部の専用面で絵を見せ、操作面は藍で保護する。 */
+.honyaku .studio-header {
+  padding-bottom: 0;
+  box-shadow: none;
+}
+.honyaku .studio-header::after {
+  content: "";
+  display: block;
+  order: 5;
+  flex: 0 0 100%;
+  height: 96px;
+  margin-top: 4px;
+  background: url('/translation-wave.png') center 82% / cover no-repeat;
+  border-top: 1px solid #b4e4ed80;
+  border-bottom: 1px solid #b4e4ed80;
+  pointer-events: none;
+}
+.honyaku .input-card,
+.honyaku .output-card { box-shadow: none; }
+.honyaku .tone:not(.active) { color: #d3e7f4; border-color: #83bad180; }
+.honyaku .ui-language-switch button:not([aria-pressed="true"]) {
+  color: #e2f2ff;
+  background: #031226d9;
+}
+.honyaku .voice-landscape-heading {
+  top: 0; left: 0; right: 0;
+  padding: 10px 13px;
+  background: #031226e8;
+}
+.honyaku .voice-landscape-heading strong { color: #e2f2ff; }
+.honyaku .voice-landscape .voice-router-core canvas { filter: none; }
+@media (max-width:600px) {
+  .honyaku { background-attachment: scroll; background-size: auto 100dvh; background-repeat: repeat-y; }
+  .honyaku .studio-header::after { height: 88px; background-size: 100% auto; }
+  .honyaku .input-actions { backdrop-filter: none; }
 }
