@@ -39,21 +39,24 @@
 .honyaku .studio-body::after { display: none; }
 .honyaku .studio-header {
   padding-left: 14px;
-  background: linear-gradient(115deg, #031226f5, #061a30ee);
+  background-image: linear-gradient(100deg, #031226e3 0%, #061a30b8 48%, #031226d9 100%), url('/translation-wave.png');
+  background-size: auto, 880px auto;
+  background-position: center, center 36%;
   border-bottom: 1px solid var(--frame);
   box-shadow: 0 12px 38px #01102666;
 }
 .honyaku .wordmark { color: #fff5d5; text-shadow: 0 2px 18px #b2edff24; }
 .honyaku .language-bar {
-  background: linear-gradient(105deg, #031226f5, #102c42ef 48%, #031226f5);
+  background: linear-gradient(105deg, #031226e8, #102c42d9 48%, #031226e8);
   border-color: #b4e4ed99;
   box-shadow: 0 18px 48px -28px #010815;
+  backdrop-filter: blur(7px);
 }
 .honyaku .input-card,
 .honyaku .output-card {
-  background: linear-gradient(145deg, #07182cf7, #031125f5);
+  background: linear-gradient(145deg, #07182ce6, #031125e3);
   border-color: var(--frame);
-  backdrop-filter: none;
+  backdrop-filter: blur(8px);
   box-shadow: 0 20px 56px -30px #010716, inset 0 1px #d1f5ff14;
 }
 .honyaku .input-card::before,
@@ -87,7 +90,9 @@
 .honyaku .room-entry-card,
 .honyaku .presentation-dialog { background: #041428; }
 .honyaku .voice-landscape {
-  background: radial-gradient(ellipse at 50% 72%, #152a4eaa, transparent 70%), linear-gradient(180deg,#041226f7,#060c20f5);
+  background-image: radial-gradient(ellipse at 50% 72%, #152a4e70, transparent 70%), linear-gradient(180deg,#041226b8,#060c20d4), url('/translation-wave.png');
+  background-size: auto, auto, cover;
+  background-position: center, center, center 58%;
   border-color: #8ad4e67d;
   box-shadow: 0 26px 60px -32px #041325, inset 0 1px #bdeaff1a;
 }
@@ -97,8 +102,8 @@
 @media (max-width:600px) {
   .honyaku { background-position: 42% center; }
   .honyaku .studio-content, .honyaku .workbench { gap: 12px; }
-  .honyaku .studio-header { padding-left: 10px; background: #031226f5; backdrop-filter: none; }
-  .honyaku .input-actions { background: #031226f5; }
+  .honyaku .studio-header { padding-left: 10px; background-size: auto, 720px auto; background-position:center, 48% 35%; }
+  .honyaku .input-actions { background: #031226df; backdrop-filter:blur(8px); }
   .honyaku .voice-landscape { min-height: 280px; }
   .honyaku .voice-landscape .voice-router-core { height: 280px; }
 }
