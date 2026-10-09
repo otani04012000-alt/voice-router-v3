@@ -152,7 +152,14 @@ to{opacity:1;transform:none}
 .honyaku .back-translation span{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--gold-hi)}
 .honyaku .back-translation p{margin:6px 0 4px;font-family:var(--min);font-weight:700;font-size:16px;color:var(--ink)}
 .honyaku .back-translation small{font-size:11px;color:var(--muted)}
-.honyaku .result-tools{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--frame-soft)}
+.honyaku .speech-control{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:54px;border:1px solid var(--gold);background:linear-gradient(105deg,rgba(201,168,76,.12),rgba(232,201,106,.22),rgba(201,168,76,.1));color:var(--ink);font-size:15px;font-weight:700;letter-spacing:.08em;box-shadow:0 12px 30px -20px rgba(232,201,106,.8);transition:background .25s,color .25s,box-shadow .25s,transform .15s}
+.honyaku .speech-control svg{color:var(--gold-hi);filter:drop-shadow(0 0 7px rgba(232,201,106,.48))}
+.honyaku .speech-control:hover{background:var(--gold);color:var(--bg);box-shadow:0 12px 30px -14px rgba(232,201,106,.82)}
+.honyaku .speech-control:hover svg{color:var(--bg)}
+.honyaku .speech-control:active{transform:scale(.985)}
+.honyaku .speech-control.is-speaking{border-color:#ff77c6;background:linear-gradient(105deg,rgba(106,224,255,.16),rgba(255,119,198,.24));box-shadow:0 0 24px rgba(255,119,198,.24);color:#ffe8f6}
+.honyaku .speech-control.is-speaking svg{color:#ff77c6;filter:drop-shadow(0 0 8px rgba(255,119,198,.65))}
+.honyaku .result-tools{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--frame-soft)}
 .honyaku .result-tools button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;height:66px;font-size:12px;color:var(--ink);transition:background 0.2s,color 0.2s}
 .honyaku .result-tools button + button{border-left:1px solid var(--frame-soft)}
 .honyaku .result-tools button svg{color:var(--gold-hi)}
@@ -516,7 +523,8 @@ to{opacity:1;transform:none}
 /* ===== マイクボタン終了時計 — 大きな輪がマイクへ収束する ===== */
 .honyaku .mic-visual{position:relative;display:grid;place-items:center;width:24px;height:24px;flex:none;overflow:visible}
 .honyaku .mic-button-countdown{position:absolute;z-index:0;width:66px;height:66px;border:3px solid #ffae48;border-radius:50%;background:radial-gradient(circle,rgba(255,174,72,.12),transparent 62%);box-shadow:0 0 12px rgba(255,174,72,.9),inset 0 0 10px rgba(255,174,72,.5);pointer-events:none;animation:hk-mic-ring-collapse 1.35s linear forwards}
-.honyaku .mic-visual>svg,.honyaku .mic-visual>.live-voice-bars{position:relative;z-index:1}\n.honyaku .mic-button-countdown::before,.honyaku .mic-button-countdown::after{content:"";position:absolute;inset:7px;border:1px solid rgba(255,224,174,.72);border-radius:50%}
+.honyaku .mic-visual>svg,.honyaku .mic-visual>.live-voice-bars{position:relative;z-index:1}
+.honyaku .mic-button-countdown::before,.honyaku .mic-button-countdown::after{content:"";position:absolute;inset:7px;border:1px solid rgba(255,224,174,.72);border-radius:50%}
 .honyaku .mic-button-countdown::after{inset:-9px;border-color:rgba(95,212,255,.35)}
 @keyframes hk-mic-ring-collapse{0%{opacity:1;transform:scale(1);border-color:#5fd4ff;box-shadow:0 0 18px rgba(95,212,255,.85),inset 0 0 12px rgba(95,212,255,.5)}35%{border-color:#ffcf74}82%{opacity:1}100%{opacity:.2;transform:scale(.16);border-color:#ff6952;box-shadow:0 0 24px rgba(255,105,82,.9)}}
 .honyaku .mic-button.mic-stopped .mic-visual{color:var(--midori);filter:drop-shadow(0 0 8px rgba(95,227,154,.75))}
@@ -534,6 +542,10 @@ to{opacity:1;transform:none}
 }
 .honyaku .voice-router-core canvas{filter:saturate(1.18) contrast(1.05)}
 .honyaku::before{display:block;opacity:1;filter:brightness(1.45) saturate(1.15);background:linear-gradient(115deg,transparent 35%,rgba(232,201,106,.1) 47%,rgba(255,240,190,.2) 50%,rgba(232,201,106,.1) 53%,transparent 65%);background-size:300% 300%;-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='83.14' viewBox='0 0 96 83.14'%3E%3Cg fill='none' stroke='white' stroke-width='4.2'%3E%3Cpath d='M0 0h96M24 41.57h48M0 83.14h96M0 0l24 41.57L48 0l24 41.57L96 0M0 83.14l24-41.57 24 41.57 24-41.57 24 41.57'/%3E%3Cpath d='M0 0l24 13.86L48 0M24 41.57V13.86M48 0v27.71M24 41.57l24-13.86 24 13.86M48 0L24 13.86M48 0l24 13.86L96 0M72 41.57V13.86M48 27.71l24-13.85'/%3E%3Cpath d='M24 41.57l24 13.86 24-13.86M48 83.14V55.43M0 83.14l24-13.86 24 13.86M24 41.57v27.71M48 55.43L24 69.28M48 83.14l24-13.86L96 83.14M72 41.57v27.71M48 55.43l24 13.85'/%3E%3C/g%3E%3C/svg%3E");-webkit-mask-size:96px 83.14px;mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='83.14' viewBox='0 0 96 83.14'%3E%3Cg fill='none' stroke='white' stroke-width='4.2'%3E%3Cpath d='M0 0h96M24 41.57h48M0 83.14h96M0 0l24 41.57L48 0l24 41.57L96 0M0 83.14l24-41.57 24 41.57 24-41.57 24 41.57'/%3E%3Cpath d='M0 0l24 13.86L48 0M24 41.57V13.86M48 0v27.71M24 41.57l24-13.86 24 13.86M48 0L24 13.86M48 0l24 13.86L96 0M72 41.57V13.86M48 27.71l24-13.85'/%3E%3Cpath d='M24 41.57l24 13.86 24-13.86M48 83.14V55.43M0 83.14l24-13.86 24 13.86M24 41.57v27.71M48 55.43L24 69.28M48 83.14l24-13.86L96 83.14M72 41.57v27.71M48 55.43l24 13.85'/%3E%3C/g%3E%3C/svg%3E");mask-size:96px 83.14px;animation:hk-sweep 9s linear infinite;mix-blend-mode:normal}
+/* 添付パッケージの実物を使用。黒金の光は残し、柄だけを太い麻の葉へ交換する。 */
+.honyaku{background-color:#090906;background-image:radial-gradient(ellipse at 8% 0%,#c8a34235,transparent 65%),radial-gradient(ellipse at 90% 95%,#96702230,transparent 65%),url("/asanoha-pattern.svg");background-size:auto,auto,144px 124.70765814495915px;background-attachment:fixed,fixed,scroll;isolation:isolate}
+.honyaku::before{z-index:-1;filter:drop-shadow(0 0 5px #e2bb51);background:linear-gradient(115deg,transparent 32%,#b8841a40 43%,#efc768cc 48%,#fff4bc 50%,#e5b440aa 53%,transparent 66%);background-size:300% 300%;-webkit-mask-image:url("/asanoha-pattern.svg");mask-image:url("/asanoha-pattern.svg");-webkit-mask-size:144px 124.70765814495915px;mask-size:144px 124.70765814495915px;animation:asanoha-sweep 9s linear infinite;mix-blend-mode:screen}
+@keyframes asanoha-sweep{0%{background-position:100% 0}100%{background-position:0 100%}}
 .honyaku .voice-landscape{position:relative;isolation:isolate;min-height:330px;overflow:hidden;border:1px solid rgba(232,201,106,.52);background:linear-gradient(180deg,rgba(7,7,5,.76),rgba(12,9,16,.9));box-shadow:0 28px 80px -42px rgba(106,224,255,.48),inset 0 0 70px rgba(232,201,106,.05)}
 .honyaku .voice-landscape::before{display:none}
 .honyaku .voice-landscape-heading{position:absolute;z-index:3;top:18px;left:20px;right:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;pointer-events:none}
@@ -558,8 +570,6 @@ to{opacity:1;transform:none}
 .honyaku .voice-landscape:has(.voice-router-core[data-state="speaking"]){border-color:rgba(255,119,198,.62)}
 .honyaku .voice-landscape:has(.voice-router-core[data-state="delivered"]){border-color:rgba(95,227,154,.54)}
 @media (max-width:600px){
-  .honyaku{background-size:auto,auto,84px 72.75px}
-  .honyaku::before{-webkit-mask-size:84px 72.75px;mask-size:84px 72.75px}
   .honyaku .voice-landscape{min-height:250px}
   .honyaku .voice-landscape .voice-router-core{height:250px}
   .honyaku .voice-landscape-heading{top:12px;left:13px;right:13px}

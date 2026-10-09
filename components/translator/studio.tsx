@@ -357,7 +357,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
       });
       if (nextConversation.advanceSpeaker)
         setSpeaker(nextConversation.nextSpeaker);
-      if (autoSpeak) {
+      if (autoSpeak || conversationModeRef.current) {
         voice.speak(turn.translated, turn.target, false, () => {
           const next = nextConversationTurn({
             speaker: turn.speaker,
@@ -398,7 +398,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
     // A new final speech-recognition result is the intentional trigger.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [voiceSubmission]);
-  const toggleConversationMode = () => {
+  const toggleConversationMode = async () => {
     const next = !conversationMode;
     conversationModeRef.current = next;
     setConversationMode(next);
@@ -410,6 +410,8 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
       }
       voice.stop();
       stopPlayback();
+    } else if (!remote && voice.supported && !busy) {
+      await voice.start(source);
     }
     setNotice(
       next
@@ -897,7 +899,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                 type="button"
                 className={`conversation-mode-toggle ${conversationMode ? "active" : ""}`}
                 aria-pressed={conversationMode}
-                onClick={toggleConversationMode}
+                onClick={() => void toggleConversationMode()}
                 disabled={!conversationMode && (busy || voice.listening)}
               >
                 <span className="mode-signal" aria-hidden="true">
@@ -910,7 +912,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                   <strong>{uiText("会話モード")}</strong>
                   <small>
                     {conversationMode
-                      ? uiText("声を聞いたら、自動翻訳して読み上げます")
+                      ? uiText("話す → 相手の言葉で読み上げ → 相手へ交代")
                       : uiText("声で入力 → 翻訳 → 読み上げをひとつに")}
                   </small>
                 </span>
@@ -1083,6 +1085,19 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                       {result.original}
                     </p>
                   </div>
+                  <button
+                    type="button"
+                    className={`speech-control ${voice.speaking ? "is-speaking" : ""}`}
+                    aria-pressed={voice.speaking}
+                    onClick={() =>
+                      voice.speaking
+                        ? stopPlayback()
+                        : voice.speak(result.translated, result.target)
+                    }
+                  >
+                    {voice.speaking ? <Square size={18} /> : <Volume2 size={20} />}
+                    <span>{voice.speaking ? uiText("停止") : uiText("読み上げ")}</span>
+                  </button>
                   {result.backTranslation && (
                     <div className="back-translation">
                       <span>
@@ -1092,20 +1107,6 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                     </div>
                   )}
                   <div className="result-tools">
-                    <button
-                      onClick={() =>
-                        voice.speaking
-                          ? stopPlayback()
-                          : voice.speak(result.translated, result.target)
-                      }
-                    >
-                      {voice.speaking ? (
-                        <Square size={16} />
-                      ) : (
-                        <Volume2 size={17} />
-                      )}
-                      {voice.speaking ? uiText("停止") : uiText("読み上げ")}
-                    </button>
                     <button
                       aria-label={uiText("訳文をコピー")}
                       onClick={() => void copy(result.translated)}
