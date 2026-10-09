@@ -148,3 +148,130 @@
   .honyaku .voice-landscape,
   .honyaku .studio-header::after { animation:none; }
 }
+
+/* 大きな波の舞台。絵を覆う外枠を外し、文字と操作だけ藍の面に置く。 */
+.honyaku {
+  --frame: rgba(118, 220, 255, .7);
+  --frame-soft: rgba(118, 220, 255, .38);
+  background-size: auto 120dvh;
+  background-position: 50% 80%;
+  background-attachment: scroll;
+  background-repeat: repeat-y;
+}
+.honyaku .studio-body::before { display: none; }
+.honyaku .studio-header {
+  position: relative;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding-bottom: 0;
+  row-gap: 12px;
+}
+.honyaku .studio-header::after {
+  content: "";
+  display: block;
+  order: 5;
+  flex: 0 0 calc(100% + 106px);
+  height: clamp(240px, 34svh, 380px);
+  margin: 4px -92px 0 -14px;
+  background-image:
+    linear-gradient(115deg, transparent 25%, #85edff00 38%, #b6f4ff88 48%, #fff3caaa 50%, #81dfff00 62%, transparent 75%),
+    url('/translation-wave.png');
+  background-size: 300% 300%, 150% auto;
+  background-position: 100% 0%, 35% 84%;
+  background-repeat: no-repeat;
+  border: 0;
+  box-shadow: 0 0 36px #1686ff55;
+  animation: wave-stage-surge 9s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+@keyframes wave-stage-surge {
+  0% { background-position: 100% 0%, 25% 90%; }
+  100% { background-position: 0% 100%, 75% 70%; }
+}
+.honyaku .wordmark {
+  font-size: clamp(28px, 7vw, 42px);
+  color: #fff4c6;
+  text-shadow: 0 0 18px #50caff99, 0 2px 4px #020b20;
+}
+.honyaku .language-bar {
+  background: #031226e8;
+  border-color: #86e2ff;
+}
+.honyaku .input-card, .honyaku .output-card {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+.honyaku .input-card::before, .honyaku .output-card::before { display: none; }
+.honyaku .card-heading {
+  align-self: flex-start;
+  padding: 5px 12px;
+  background: #031226f2;
+}
+.honyaku .input-card form {
+  padding: 12px;
+  background: #031226d9;
+}
+.honyaku .output-card .translation-content,
+.honyaku .original-caption,
+.honyaku .back-translation,
+.honyaku .result-bottom {
+  padding: 12px;
+  background: #031226f2;
+}
+.honyaku textarea {
+  background: #020e20f5;
+  color: #f5fbff;
+  border-color: #90d8f3;
+}
+.honyaku textarea::placeholder { color: #d3e5f2; }
+.honyaku .tone:not(.active) { color: #e2f2ff; border-color: #9bdcf0; }
+.honyaku .ui-language-switch button:not([aria-pressed="true"]) {
+  color: #e2f2ff; background: #031226ed;
+}
+.honyaku .voice-landscape {
+  min-height: 380px;
+  border: 0;
+  background-image: linear-gradient(180deg, #04122618, #04122644), url('/translation-wave.png');
+  background-size: auto, 145% auto;
+  background-position: center, 25% 90%;
+  animation: wave-garden-surge 12s ease-in-out infinite alternate;
+  box-shadow: 0 0 40px #1686ff55;
+}
+@keyframes wave-garden-surge {
+  to { background-position: center, 75% 72%; }
+}
+.honyaku .voice-landscape .voice-router-core { height: 380px; }
+.honyaku .voice-landscape-heading {
+  top: 0; left: 0; right: 0;
+  padding: 10px 13px;
+  background: #031226eb;
+}
+.honyaku .voice-landscape-heading strong { color: #e2f2ff; }
+.honyaku .voice-landscape .voice-router-core canvas { filter: none; }
+@media (max-width:600px) {
+  .honyaku .studio-body { --gutter: 12px; }
+  .honyaku .studio-header { padding-left: 10px; padding-right: 84px; }
+  .honyaku .studio-header::after {
+    flex-basis: calc(100% + 118px);
+    margin-left: -22px;
+    margin-right: -96px;
+    height: clamp(240px, 34svh, 320px);
+    background-size: 300% 300%, auto 170%;
+  }
+  .honyaku .input-actions { background: #031226; backdrop-filter: none; }
+  .honyaku .voice-landscape {
+    min-height: 360px;
+    background-size: auto, auto 160%;
+  }
+  .honyaku .voice-landscape .voice-router-core { height: 360px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .honyaku .studio-header::after,
+  .honyaku .voice-landscape { animation: none; }
+}
+
+.honyaku .input-card, .honyaku .output-card, .honyaku .language-bar { backdrop-filter: none; }
