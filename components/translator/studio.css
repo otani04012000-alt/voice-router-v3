@@ -523,19 +523,20 @@ to{opacity:1;transform:none}
 .honyaku .mic-button.mic-stopped{border-color:rgba(95,227,154,.62);color:var(--midori);background:rgba(95,227,154,.1)}
 @media (prefers-reduced-motion:reduce){.honyaku .mic-button-countdown{width:30px;height:30px;animation:none}}
 
-/* ===== 麻の葉の金屏風 × 声の織り目 ===== */
+/* ===== 元の金屏風背景 × 声の織り目 ===== */
 .honyaku{
   background-image:
     radial-gradient(72% 54% at 8% -4%,rgba(232,201,106,.24),transparent 64%),
     radial-gradient(62% 48% at 100% 100%,rgba(139,105,20,.2),transparent 72%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='84' viewBox='0 0 96 84'%3E%3Cg fill='none' stroke='%23c9a84c' stroke-opacity='.15' stroke-width='.8' stroke-linejoin='miter'%3E%3Cpath d='M48 0 72 42 48 84 24 42ZM0 0 24 42 0 84M96 0 72 42 96 84M0 42h96M48 0v84'/%3E%3Cpath d='M0 0 48 42 96 0M0 84 48 42 96 84M24 0 48 42 72 0M24 84 48 42 72 84'/%3E%3Cpath d='M0 42 24 21 48 42 24 63ZM96 42 72 21 48 42 72 63Z'/%3E%3C/g%3E%3C/svg%3E");
-  background-size:auto,auto,96px 84px;
-  background-attachment:fixed,fixed,fixed;
+    radial-gradient(circle at 50% 100%,transparent 21px,rgba(232,201,106,.14) 22px,transparent 23px,transparent 31px,rgba(201,168,76,.1) 32px,transparent 33px),
+    radial-gradient(circle at 0 50%,transparent 21px,rgba(232,201,106,.14) 22px,transparent 23px,transparent 31px,rgba(201,168,76,.1) 32px,transparent 33px);
+  background-size:auto,auto,68px 34px,68px 34px;
+  background-attachment:fixed,fixed,scroll,scroll;
 }
 .honyaku .voice-router-core canvas{filter:saturate(1.18) contrast(1.05)}
-.honyaku::before{display:block;opacity:1;filter:brightness(1.45) saturate(1.15);background:linear-gradient(115deg,transparent 35%,rgba(232,201,106,.1) 47%,rgba(255,240,190,.2) 50%,rgba(232,201,106,.1) 53%,transparent 65%);background-size:300% 300%;-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='84' viewBox='0 0 96 84'%3E%3Cg fill='none' stroke='white' stroke-width='1.6'%3E%3Cpath d='M48 0 72 42 48 84 24 42ZM0 0 24 42 0 84M96 0 72 42 96 84M0 42h96M48 0v84'/%3E%3Cpath d='M0 0 48 42 96 0M0 84 48 42 96 84M24 0 48 42 72 0M24 84 48 42 72 84'/%3E%3Cpath d='M0 42 24 21 48 42 24 63ZM96 42 72 21 48 42 72 63Z'/%3E%3C/g%3E%3C/svg%3E");-webkit-mask-size:96px 84px;mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='84' viewBox='0 0 96 84'%3E%3Cg fill='none' stroke='white' stroke-width='1.6'%3E%3Cpath d='M48 0 72 42 48 84 24 42ZM0 0 24 42 0 84M96 0 72 42 96 84M0 42h96M48 0v84'/%3E%3Cpath d='M0 0 48 42 96 0M0 84 48 42 96 84M24 0 48 42 72 0M24 84 48 42 72 84'/%3E%3Cpath d='M0 42 24 21 48 42 24 63ZM96 42 72 21 48 42 72 63Z'/%3E%3C/g%3E%3C/svg%3E");mask-size:96px 84px;animation:hk-sweep 9s linear infinite;mix-blend-mode:normal}
+.honyaku::before{display:block;opacity:1;filter:brightness(1.45) saturate(1.15);background:linear-gradient(115deg,transparent 35%,rgba(232,201,106,.1) 47%,rgba(255,240,190,.2) 50%,rgba(232,201,106,.1) 53%,transparent 65%);background-size:300% 300%;-webkit-mask-image:radial-gradient(circle at 50% 100%,transparent 17px,#000 18px,#000 21px,transparent 22px,transparent 25px,#000 26px,#000 29px,transparent 30px),radial-gradient(circle at 0 50%,transparent 17px,#000 18px,#000 21px,transparent 22px,transparent 25px,#000 26px,#000 29px,transparent 30px);-webkit-mask-size:56px 28px;mask-image:radial-gradient(circle at 50% 100%,transparent 17px,#000 18px,#000 21px,transparent 22px,transparent 25px,#000 26px,#000 29px,transparent 30px),radial-gradient(circle at 0 50%,transparent 17px,#000 18px,#000 21px,transparent 22px,transparent 25px,#000 26px,#000 29px,transparent 30px);mask-size:56px 28px;animation:hk-sweep 9s linear infinite;mix-blend-mode:normal}
 .honyaku .voice-landscape{position:relative;isolation:isolate;min-height:330px;overflow:hidden;border:1px solid rgba(232,201,106,.52);background:linear-gradient(180deg,rgba(7,7,5,.76),rgba(12,9,16,.9));box-shadow:0 28px 80px -42px rgba(106,224,255,.48),inset 0 0 70px rgba(232,201,106,.05)}
-.honyaku .voice-landscape::before{content:"";position:absolute;inset:0;z-index:-1;opacity:.46;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='84' viewBox='0 0 96 84'%3E%3Cg fill='none' stroke='%23c9a84c' stroke-opacity='.18' stroke-width='.85' stroke-linejoin='miter'%3E%3Cpath d='M48 0 72 42 48 84 24 42ZM0 0 24 42 0 84M96 0 72 42 96 84M0 42h96M48 0v84'/%3E%3Cpath d='M0 0 48 42 96 0M0 84 48 42 96 84M24 0 48 42 72 0M24 84 48 42 72 84'/%3E%3Cpath d='M0 42 24 21 48 42 24 63ZM96 42 72 21 48 42 72 63Z'/%3E%3C/g%3E%3C/svg%3E") center/96px 84px;mask-image:linear-gradient(to bottom,rgba(0,0,0,.82),transparent 88%);transition:opacity .45s,filter .45s}
+.honyaku .voice-landscape::before{display:none}
 .honyaku .voice-landscape-heading{position:absolute;z-index:3;top:18px;left:20px;right:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;pointer-events:none}
 .honyaku .voice-landscape-heading span{font-family:var(--dot);font-size:12px;letter-spacing:.22em;color:var(--gold-hi)}
 .honyaku .voice-landscape-heading strong{font-size:12px;font-weight:500;letter-spacing:.08em;color:var(--sub)}
@@ -558,8 +559,7 @@ to{opacity:1;transform:none}
 .honyaku .voice-landscape:has(.voice-router-core[data-state="speaking"]){border-color:rgba(255,119,198,.62)}
 .honyaku .voice-landscape:has(.voice-router-core[data-state="delivered"]){border-color:rgba(95,227,154,.54)}
 @media (max-width:600px){
-  .honyaku{background-size:auto,auto,82px 72px}
-  .honyaku::before{-webkit-mask-size:82px 72px;mask-size:82px 72px}
+  .honyaku{background-size:auto,auto,68px 34px,68px 34px}
   .honyaku .voice-landscape{min-height:250px}
   .honyaku .voice-landscape .voice-router-core{height:250px}
   .honyaku .voice-landscape-heading{top:12px;left:13px;right:13px}
