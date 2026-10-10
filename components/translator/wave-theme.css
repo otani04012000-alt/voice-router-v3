@@ -1,1 +1,31 @@
-/* Design preview: use the existing studio.css without wave-theme overrides. */
+/* Restore background settings from d9c4bad; keep studio layout and logic unchanged. */
+.honyaku {
+  background-image:
+    radial-gradient(72% 54% at 8% -4%,rgba(232,201,106,.24),transparent 64%),
+    radial-gradient(62% 48% at 100% 100%,rgba(139,105,20,.2),transparent 72%),
+    radial-gradient(circle at 50% 100%,transparent 21px,rgba(232,201,106,.14) 22px,transparent 23px,transparent 31px,rgba(201,168,76,.1) 32px,transparent 33px),
+    radial-gradient(circle at 0 50%,transparent 21px,rgba(232,201,106,.14) 22px,transparent 23px,transparent 31px,rgba(201,168,76,.1) 32px,transparent 33px);
+  background-size:auto,auto,68px 34px,68px 34px;
+  background-attachment:fixed,fixed,scroll,scroll;
+}
+.honyaku::before {
+  display:block;
+  opacity:1;
+  filter:brightness(1.45) saturate(1.15);
+  background:linear-gradient(115deg,transparent 35%,rgba(232,201,106,.1) 47%,rgba(255,240,190,.2) 50%,rgba(232,201,106,.1) 53%,transparent 65%);
+  background-size:300% 300%;
+  -webkit-mask-image:radial-gradient(circle at 50% 100%,transparent 17px,#000 18px,#000 21px,transparent 22px,transparent 25px,#000 26px,#000 29px,transparent 30px),radial-gradient(circle at 0 50%,transparent 17px,#000 18px,#000 21px,transparent 22px,transparent 25px,#000 26px,#000 29px,transparent 30px);
+  -webkit-mask-size:56px 28px;
+  mask-image:radial-gradient(circle at 50% 100%,transparent 17px,#000 18px,#000 21px,transparent 22px,transparent 25px,#000 26px,#000 29px,transparent 30px),radial-gradient(circle at 0 50%,transparent 17px,#000 18px,#000 21px,transparent 22px,transparent 25px,#000 26px,#000 29px,transparent 30px);
+  mask-size:56px 28px;
+  animation:hk-sweep 9s linear infinite;
+  mix-blend-mode:normal;
+}
+.honyaku .voice-landscape::before { display:none; }
+@media (max-width:600px) {
+  .honyaku { background-size:auto,auto,68px 34px,68px 34px; }
+  .honyaku::before { -webkit-mask-size:56px 28px; mask-size:56px 28px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .honyaku::before { animation:none; }
+}
