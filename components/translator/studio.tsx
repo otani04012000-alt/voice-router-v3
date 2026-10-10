@@ -43,6 +43,7 @@ import {
 import { useRoomSocket } from "@/app/secret-room/[roomId]/use-room-socket";
 import type { RoomMessage } from "@/app/secret-room/[roomId]/types";
 import { useVoice } from "./use-voice";
+import { classifyCommand } from "@/lib/conversation-confirmation.mjs";
 import { nextConversationTurn } from "./conversation-turn";
 import { UI_LANGUAGES, isUiLanguage, resolveUiLanguage, translateUi, type UiLanguage } from "./ui-language";
 import SecretaryPresence from "./secretary-presence";
@@ -131,17 +132,86 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
   const end = useRef<HTMLDivElement>(null);
   const lock = useRef(false);
   const conversationModeRef = useRef(false);
+  const draftVoice = useRef("");
+  const retries = useRef(0);
+  const dropLate = useRef(false);
+  const restartVoice = useRef(false);
+  const sendTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const commandRef = useRef<(command: "A" | "B") => void>(() => {});
+  const [draining, setDraining] = useState(false);
+  const [manualFallback, setManualFallback] = useState(false);
+  const cancelSend = useCallback(() => {
+    if (sendTimer.current) clearTimeout(sendTimer.current);
+    sendTimer.current = null;
+    setDraining(false);
+  }, []);
   const source = speaker === "you" ? myLanguage : otherLanguage;
   const target = speaker === "you" ? otherLanguage : myLanguage;
   const voice = useVoice(
     useCallback((value: string) => {
+      if (dropLate.current) return;
+      if (conversationModeRef.current) {
+        const command = classifyCommand(value, "listening");
+        if (command) { commandRef.current(command); return; }
+        cancelSend();
+        draftVoice.current = [draftVoice.current, value].filter(Boolean).join(" ");
+        setResult(null);
+        setText(draftVoice.current);
+        setDraining(true);
+        sendTimer.current = setTimeout(() => {
+          sendTimer.current = null;
+          if (!conversationModeRef.current || restartVoice.current) return;
+          dropLate.current = true;
+          setDraining(false);
+          setVoiceSubmission((n) => n + 1);
+        }, 1350);
+        return;
+      }
       setResult(null);
       setText((t) => (t ? `${t} ${value}` : value).slice(0, MAX_TEXT));
-      if (conversationModeRef.current)
-        setVoiceSubmission((submission) => submission + 1);
-    }, []),
+    }, [cancelSend]),
     setNotice,
   );
+  const runCommand = (command: "A" | "B") => {
+    if (!conversationModeRef.current || busy || voice.speaking) return;
+    cancelSend();
+    dropLate.current = true;
+    voice.stop();
+    if (command === "A") {
+      restartVoice.current = false;
+      const original = [draftVoice.current || text, voice.interim].filter(Boolean).join(" ").trim();
+      draftVoice.current = original;
+      setText(original);
+      if (original) setVoiceSubmission((n) => n + 1);
+      return;
+    }
+    if (retries.current >= 2) {
+      restartVoice.current = false;
+      conversationModeRef.current = false;
+      setConversationMode(false);
+      setAutoSpeak(false);
+      setManualFallback(true);
+      setNotice(uiLanguage === "zh" ? "已重新录音两次，请使用手动麦克风或文字输入。" : "録り直しは2回までです。手動マイクか手入力で続けてください。");
+      return;
+    }
+    retries.current += 1;
+    draftVoice.current = "";
+    setText("");
+    setResult(null);
+    restartVoice.current = true;
+  };
+  useEffect(() => { commandRef.current = runCommand; });
+  useEffect(() => {
+    if (!restartVoice.current || voice.listening || voice.speaking || busy) return;
+    restartVoice.current = false;
+    if (!conversationModeRef.current) return;
+    dropLate.current = false;
+    void voice.start(source);
+  }, [voice.listening, voice.speaking, busy, source, voice.start]);
+  useEffect(() => {
+    if (voice.listening && !restartVoice.current) dropLate.current = false;
+  }, [voice.listening]);
+  useEffect(() => () => { if (sendTimer.current) clearTimeout(sendTimer.current); }, []);
 
   useEffect(() => {
     setMemberId(`member-${crypto.randomUUID()}`);
@@ -267,7 +337,21 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
               : turn.target === myLanguage
                 ? turn.translated
                 : null;
-          if (mine) voice.speak(mine, myLanguage);
+          if (mine) {
+            cancelSend();
+            dropLate.current = true;
+            restartVoice.current = false;
+            voice.speak(mine, myLanguage, false, () => {
+              if (!conversationModeRef.current) return;
+              conversationRestartTimer.current = setTimeout(() => {
+                conversationRestartTimer.current = null;
+                if (!conversationModeRef.current) return;
+                dropLate.current = false;
+                draftVoice.current = "";
+                void voice.start(myLanguage);
+              }, 350);
+            });
+          }
         }
       } else {
         // Compatibility with clients running PR #7: preserve the original without pretending it is translated.
@@ -285,7 +369,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
         });
       }
     },
-    [memberId, addTurn, autoSpeak, myLanguage, otherLanguage, voice.speak, uiLanguage],
+    [memberId, addTurn, autoSpeak, myLanguage, otherLanguage, voice.speak, voice.start, uiLanguage, cancelSend],
   );
   const socket = useRoomSocket({
     enabled: remote && Boolean(memberId) && Boolean(memberName),
@@ -320,6 +404,17 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
   };
   const appendTranslation = async () => {
     if (lock.current || !text.trim()) return;
+    cancelSend();
+    dropLate.current = true;
+    if (text.length > MAX_TEXT) {
+      conversationModeRef.current = false;
+      setConversationMode(false);
+      setAutoSpeak(false);
+      setManualFallback(true);
+      voice.stop();
+      setNotice(uiLanguage === "zh" ? `原文已保留，请缩短到${MAX_TEXT}字以内。` : `原文は残しています。送信する文章を${MAX_TEXT}文字以内に編集してください。`);
+      return;
+    }
     // Clicking the submit button can nudge Chrome a few pixels before the
     // submit handler runs. Treat that tiny offset as the top of the page.
     const initialScrollY = window.scrollY < 80 ? 0 : window.scrollY;
@@ -346,8 +441,16 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
         speaker,
       };
       setResult(turn);
+      retries.current = 0;
+      draftVoice.current = "";
       setText("");
       if (!remote) addTurn(turn);
+      if (remote && conversationModeRef.current) {
+        const sent = socket.connectionState === "connected" && socket.members.length >= 2
+          && socket.sendMessage(turn.original, turn.id, turn.createdAt, turn);
+        if (sent) { addTurn(turn); socket.sendTyping(false); }
+        else setNotice(uiLanguage === "zh" ? "发送失败，译文已保留。连接后可重试。" : "送信できませんでした。訳文は残っています。接続後に再送できます。");
+      }
       const nextConversation = nextConversationTurn({
         speaker: turn.speaker,
         myLanguage,
@@ -358,7 +461,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
       });
       if (nextConversation.advanceSpeaker)
         setSpeaker(nextConversation.nextSpeaker);
-      if (autoSpeak || conversationModeRef.current) {
+      if ((!remote && (autoSpeak || conversationModeRef.current)) || (remote && autoSpeak && !conversationModeRef.current)) {
         voice.speak(turn.translated, turn.target, false, () => {
           const next = nextConversationTurn({
             speaker: turn.speaker,
@@ -373,6 +476,8 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
           conversationRestartTimer.current = setTimeout(() => {
             conversationRestartTimer.current = null;
             if (!conversationModeRef.current) return;
+            dropLate.current = false;
+            draftVoice.current = "";
             void voice.start(next.nextLanguage);
           }, 350);
         });
@@ -401,6 +506,12 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
   }, [voiceSubmission]);
   const toggleConversationMode = async () => {
     const next = !conversationMode;
+    cancelSend();
+    restartVoice.current = false;
+    retries.current = 0;
+    draftVoice.current = text;
+    dropLate.current = !next;
+    setManualFallback(false);
     conversationModeRef.current = next;
     setConversationMode(next);
     setAutoSpeak(next);
@@ -411,7 +522,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
       }
       voice.stop();
       stopPlayback();
-    } else if (!remote && voice.supported && !busy) {
+    } else if (voice.supported && !busy) {
       await voice.start(source);
     }
     setNotice(
@@ -540,6 +651,8 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
     URL.revokeObjectURL(url);
   };
   const changeLanguage = (side: "my" | "other", value: Language) => {
+    cancelSend(); restartVoice.current = false; dropLate.current = true; draftVoice.current = "";
+    conversationModeRef.current = false; setConversationMode(false);
     voice.stop();
     stopPlayback();
     setResult(null);
@@ -552,6 +665,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
     }
   };
   const reset = () => {
+    cancelSend(); restartVoice.current = false; draftVoice.current = ""; retries.current = 0;
     stopPlayback();
     setResult(null);
     setText("");
@@ -569,7 +683,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
     ? "translating"
     : voice.speaking
       ? "speaking"
-    : voice.micPhase === "ending" || voice.micPhase === "stopping"
+    : draining || voice.micPhase === "ending" || voice.micPhase === "stopping"
       ? "ending"
     : voice.listening
       ? "listening"
@@ -582,6 +696,8 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
     ? uiText("ことばを翻訳しています。")
     : voice.speaking
       ? uiText("訳文を読み上げています")
+    : draining
+      ? (uiLanguage === "zh" ? "正在收束，即将发送" : "光を収束中・まもなく送信")
     : voice.micPhase === "ending"
       ? uiText("まもなくマイクが切れます")
       : voice.micPhase === "stopping"
@@ -921,6 +1037,34 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                   <i />
                 </span>
               </button>
+              {(conversationMode || manualFallback) && (
+                <section aria-label={uiLanguage === "zh" ? "语音快捷指令" : "音声ショートカット"}
+                  style={{padding:12,marginBottom:12,border:"1px solid var(--gold)",background:"var(--bg)"}}>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:10}}>
+                    {conversationMode ? <>
+                      <button type="button" disabled={busy || voice.speaking} onClick={() => runCommand("A")}
+                        style={{padding:"12px 18px",background:"var(--gold)",color:"var(--bg)",fontWeight:700}}>
+                        A · {uiLanguage === "zh" ? "发送" : "送る"}
+                      </button>
+                      <button type="button" disabled={busy || voice.speaking} onClick={() => runCommand("B")}
+                        style={{padding:"12px 18px",border:"1px solid var(--gold)",color:"var(--ink)",fontWeight:700}}>
+                        B · {uiLanguage === "zh" ? "重新录音" : "最初から"}
+                      </button>
+                    </> : <>
+                      <button type="button" disabled={!voice.supported || busy || voice.listening}
+                        onClick={() => { dropLate.current = false; void voice.start(source); }}>
+                        {uiLanguage === "zh" ? "手动麦克风" : "手動マイク"}
+                      </button>
+                      <button type="button" onClick={() => textarea.current?.focus({preventScroll:true})}>
+                        {uiLanguage === "zh" ? "文字输入" : "手入力"}
+                      </button>
+                    </>}
+                  </div>
+                  <div lang={source} style={{fontSize:"clamp(22px,5vw,34px)",lineHeight:1.5,maxHeight:240,overflowY:"auto",whiteSpace:"pre-wrap",overflowWrap:"anywhere",marginTop:12}}>
+                    {[text, voice.interim].filter(Boolean).join(" ")}
+                  </div>
+                </section>
+              )}
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -948,6 +1092,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                   }
                   onChange={(e) => {
                     setText(e.target.value);
+                    draftVoice.current = e.target.value; cancelSend();
                     setResult(null);
                     if (remote) {
                       socket.sendTyping(Boolean(e.target.value));
@@ -1010,7 +1155,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                     className={`mic-button ${voice.listening ? "listening" : ""} mic-${voice.micPhase}`}
                     type="button"
                     disabled={(busy && !voice.listening) || !voice.supported || voice.micPhase === "stopping"}
-                    onClick={() => voice.start(source)}
+                    onClick={() => { cancelSend(); dropLate.current = false; void voice.start(source); }}
                   >
                     <span className="mic-visual" aria-hidden="true">
                       {voice.micPhase === "ending" ? <i className="mic-button-countdown" /> : null}
