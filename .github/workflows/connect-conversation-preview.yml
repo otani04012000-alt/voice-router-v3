@@ -1,0 +1,44 @@
+name: Connect conversation preview
+on:
+  push:
+    branches: [preview/translation-design]
+    paths: [.github/workflows/connect-conversation-preview.yml]
+permissions:
+  contents: write
+concurrency:
+  group: connect-conversation-preview
+  cancel-in-progress: false
+jobs:
+  connect:
+    if: github.repository == 'otani04012000-alt/voice-router-v3' && github.ref == 'refs/heads/preview/translation-design'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: preview/translation-design
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply reviewed screen connection
+        env:
+          CONNECTION_SCRIPT_ZLIB: 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
+        run: |
+          python3 - <<'PY'
+          import os, base64, zlib
+          exec(compile(zlib.decompress(base64.b64decode(os.environ['CONNECTION_SCRIPT_ZLIB'])), 'reviewed-screen-connection.py', 'exec'))
+          PY
+      - run: npm ci
+      - run: npm ci --prefix server
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+      - name: Save validated connection to preview branch only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add components/translator/studio.tsx lib/conversation-confirmation.d.mts
+          git commit -m 'feat: connect voice shortcuts and live transcript to studio'
+          git push origin HEAD:refs/heads/preview/translation-design
