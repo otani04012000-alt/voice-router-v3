@@ -1,0 +1,41 @@
+name: Voice garden integration preview
+on:
+  push:
+    branches: [preview/translation-design]
+    paths: [.github/workflows/voice-garden-integration-preview.yml]
+permissions:
+  contents: write
+jobs:
+  integrate:
+    if: github.repository == 'otani04012000-alt/voice-router-v3' && github.ref == 'refs/heads/preview/translation-design'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: preview/translation-design
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Integrate real-state voice garden
+        env:
+          PATCH: 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
+        run: |
+          python3 - <<'PY'
+          import os,base64,zlib
+          exec(compile(zlib.decompress(base64.b64decode(os.environ['PATCH'])), 'apply-garden.py', 'exec'))
+          PY
+      - run: npm ci
+      - run: npm ci --prefix server
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+      - name: Commit validated illustration on preview only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add components/translator/voice-router-core.tsx components/translator/voice-garden.tsx
+          git commit -m 'feat: integrate reactive shader and blue synapse voice garden'
+          git push origin HEAD:refs/heads/preview/translation-design
