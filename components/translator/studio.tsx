@@ -1390,26 +1390,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
               <i className={engine === "unavailable" ? "offline" : ""} />
             </span>
           </div>
-          {!conversationMode && (
-          <section className="voice-landscape" aria-label={uiText("音声入力の状態")}>
-            <div className="voice-landscape-heading">
-              <span>{uiText("声の庭")}</span>
-              <strong>{routerPhaseLabel}</strong>
-            </div>
-            <VoiceRouterCore
-              variant="landscape"
-              state={routerState}
-              signal={voice.signal}
-              sourceLabel={LANGUAGES[source].native}
-              targetLabel={LANGUAGES[target].native}
-              phaseLabel={routerPhaseLabel}
-              waitingLabel={uiText("声を待っています")}
-              quietLabel={uiText("もう少し近くで話してください")}
-              heardLabel={uiText("声が届いています")}
-              levelLabel={uiText("声の強さ")}
-            />
-          </section>
-          )}
+          
           {turns.length > 0 && (
             <section className="conversation-section">
               <div className="section-heading">
