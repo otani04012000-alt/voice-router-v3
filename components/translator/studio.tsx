@@ -107,6 +107,8 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
   const [keepHistory, setKeepHistory] = useState(false);
   const [autoSpeak, setAutoSpeak] = useState(false);
   const [conversationMode, setConversationMode] = useState(false);
+  const [reconnecting, setReconnecting] = useState(false);
+  const reconnectLock = useRef(false);
   const [voiceSubmission, setVoiceSubmission] = useState(0);
   const [swapping, setSwapping] = useState(false);
   const [panel, setPanel] = useState<"saved" | "settings" | null>(null);
@@ -531,6 +533,26 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
         ? "会話モードを開始しました。話し終えると、自動で翻訳して読み上げます。"
         : "会話モードを終了しました。",
     );
+  };
+  const reconnectAudio = async () => {
+    if (reconnectLock.current || busy || voice.speaking || !voice.supported) return;
+    reconnectLock.current = true;
+    setReconnecting(true);
+    cancelSend();
+    stopPlayback();
+    restartVoice.current = false;
+    draftVoice.current = [text, voice.interim].filter(Boolean).join(" ");
+    setText(draftVoice.current);
+    dropLate.current = false;
+    try {
+      await voice.refresh(source);
+      setNotice(uiLanguage === "zh" ? "已请求重新连接麦克风。请查看麦克风状态。" : "マイクの再接続を開始しました。入力状態を確認してください。");
+    } catch {
+      setNotice(uiLanguage === "zh" ? "无法重新连接。请使用文字输入。" : "再接続できませんでした。手入力で続けられます。");
+    } finally {
+      reconnectLock.current = false;
+      setReconnecting(false);
+    }
   };
   const sendResult = () => {
     if (!result || sentIds.includes(result.id)) return;
@@ -1152,6 +1174,11 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
                     ))}
                   </div>
                 </div>
+                <button type="button" className="outline-button" disabled={reconnecting || busy || voice.speaking || !voice.supported}
+                  onClick={() => void reconnectAudio()} aria-busy={reconnecting}>
+                  <RotateCcw size={16} />
+                  {uiLanguage === "zh" ? (reconnecting ? "正在重新连接" : "重新连接麦克风") : (reconnecting ? "再接続中" : "音声を再接続")}
+                </button>
                 <div className="input-actions">
                   <button
                     className={`mic-button ${voice.listening ? "listening" : ""} mic-${voice.micPhase}`}
