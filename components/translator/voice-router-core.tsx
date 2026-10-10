@@ -42,6 +42,23 @@ type AssistMote = {
   phase: number;
 };
 
+export function voiceMotion(state: string, elapsed: number, level = 0) {
+  const t = Math.max(0, elapsed);
+  const energy = Math.max(0, Math.min(1, level));
+  if (state === "ending") {
+    const p = Math.min(1, t / 1350);
+    return { scale: (1 - p) ** 2, opacity: 1 - p, swirl: p * Math.PI * 3 };
+  }
+  if (state === "stopped") return { scale: 0, opacity: 0, swirl: 0 };
+  if (state === "translating") return { scale: 0.12 + Math.sin(t / 220) * 0.015, opacity: 0.75, swirl: t / 650 };
+  if (state === "speaking") {
+    const p = Math.min(1, t / 650);
+    const ease = 1 - (1 - p) ** 3;
+    return { scale: 0.12 + ease * 1.08, opacity: 0.35 + ease * 0.65, swirl: -ease * Math.PI };
+  }
+  return { scale: state === "idle" ? 0.76 : state === "delivered" ? 0.88 : 1 + energy * 0.18, opacity: 1, swirl: 0 };
+}
+
 const TAU = Math.PI * 2;
 
 export default function VoiceRouterCore({
@@ -231,16 +248,9 @@ export default function VoiceRouterCore({
       const t = now * 0.001;
       const base = Math.min(width * 0.31, height * 1.04);
       const pace = state === "translating" ? 1.75 : state === "speaking" ? -1.35 : 0.58 + energy * 1.8;
-      const endingProgress = state === "ending" ? Math.min(1, elapsed / 1350) : 0;
-      const formScale = state === "idle"
-        ? 0.76
-        : state === "stopped"
-          ? 0.54
-          : state === "ending"
-            ? 1 - endingProgress * 0.46
-            : state === "delivered"
-              ? 0.88
-              : 1;
+      const motion = voiceMotion(state, elapsed, signal.current.level);
+      if (canvas.current) canvas.current.style.opacity = String(motion.opacity);
+      const formScale = motion.scale;
       const juliaStrength = state === "translating"
         ? 0.34
         : state === "speaking"
@@ -251,7 +261,7 @@ export default function VoiceRouterCore({
       const speakingStretch = state === "speaking" ? 1.2 : 1;
       const rotY = t * 0.16 * pace;
       const rotX = -0.46 + Math.sin(t * 0.31) * 0.11;
-      const rotZ = Math.sin(t * 0.19) * 0.08;
+      const rotZ = Math.sin(t * 0.19) * 0.08 + motion.swirl;
       const cy = Math.cos(rotY), sy = Math.sin(rotY);
       const cx = Math.cos(rotX), sx = Math.sin(rotX);
       const cz = Math.cos(rotZ), sz = Math.sin(rotZ);
