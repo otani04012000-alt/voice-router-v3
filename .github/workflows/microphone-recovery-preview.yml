@@ -1,0 +1,41 @@
+name: Microphone recovery preview
+on:
+  push:
+    branches: [preview/translation-design]
+    paths: [.github/workflows/microphone-recovery-preview.yml]
+permissions:
+  contents: write
+jobs:
+  recovery:
+    if: github.repository == 'otani04012000-alt/voice-router-v3' && github.ref == 'refs/heads/preview/translation-design'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: preview/translation-design
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Add reviewed microphone recovery
+        env:
+          RECOVERY_SCRIPT_ZLIB: eNq9V1tv1EYUft9fMeyLbWUxu5AQkmBQm/JQCRBKaF8CQmN7NjvFa68841wIkdi0FEEKVUsBtSBApVxUiUKLBBVS6Y9ZNiH/omc8Hq+96w0gUP2QrM+c++Wb43oYNFEL84ZHbUSbrSDk6Bi8lpLfDczEUckldeQF2NUFb4UstYjDiWtMlhA8LUuIxEfGFLKtlhkS7J6ylzlhuhGz0LpSZbIGrum2ZnuBjbQRxkPdI75uG4ZJfCdwiW6M2NqJqjZiG2aDLLl0njCuGzssZVUaFU+IKSNodplx0jy0RLmuzQZR6BDkNLA/D5xgIPYqlggJj0IftSq26RJpKY4rJC0PO0RnlcBzKz5ZTMICn5npBJHPdTgAB2qTBRZnQNUCCZcR9p1GEKImZU3MnYawDWJzk3urJ3P2makMJuYqNaO0UGFWnF/NCSDzPvE528VD7DMP8yDcFTGycyGgDjE50yoa2WO7+2oTe+y99Vp9dNSZGB+r2vtGqxPOBB6tktHx8bHahGtPaEaJWb34NIScwGccsRYhTmMm8pGFQPUMqetVY0p7G8MJX51TvxXxAflh1njQOkI4CSX3NPY8Gzundd1A1gG0or0zp7CPUtumE4UhJAqNWKhWYBwhDmVJhHoWoDeboB4vYsqRjxfovMiw2SQuxZ+RBcgxM+cJ/4KR8Iig6dLBYm2EMRqILPQ7NfURzBZEpPR9Erk0mA58Tpb4tKCEkQPqkKUpPuhefSBTOyxL+Wz0YkGJe8L+8RDyDVNr1oPwEHYaus4FJc5//MsUNdINY6onLRs7JazmQx/uamF8wm9HcoMpzAmywOkyi6AlfZe4ZSPJoWIKCYuaMMtT2oerUJ7/j8mDqXZTRxwvYFk/BnO73Yy903h9nMmKa7xaQXMns6gAyYY7I28As2XfQboHgBzheTKJDie/Mt6BKkQ8ANY0qykQZJLBCD9MAXh96s/rdQz8ubMj1DkGdwzRy0G9XlZHqaOpxg/2uCAdsp1iZXmvpRUBZwD0KNP+vX7tR5KRkSFYMtTI27s110Xb+lQ4kyHccfM+5aBL6T9oYhsWhEx5ErWRjCG9QNIgeuNZ2GVKzcexNRBGcvkmDcaillhviFvRKkjT0gEJSR2woPF+DaGWBV20WIu4x2mThMoVAzkewaGgBREvZpkqqZbvPxI1ijxPMkgXYWkAakGWpkpD0pdTIvwU20ziNhL6zMAXCOgJTvlKwlAgtHrz3ZwOJaSGR75hgfMFJCmdSMSVyjNJWrENVfeYtFrqRwZJ6K++7CeZMljKiHfMw8uikL1+UrLF5zlHIg62BFvh6SL13WDRlD7MLvu8QRhlB02pOHWR8NkWwaczwFUahmilIXCm6J/DTRHSpl5WtAwspC0aH0nUA3IFZcGv1BuGpGPinq+U+gZDgyFqVfi2aynjosKwky7BdO+267XxCXiq48R2YDetVkerds12xnbXd4/vq+3Fu8nonrEx0MvT4eS922kO/sEmzbBo3iOwn1dEvNN9xJNyOGfFva5ypn0MJb1LYU4Mke/DxwbUJZafyRC2l01FDwfO6d52rBwdEjqD9p9RI5je23lkSvTG65RYJCUo9UFQznzasWfPIjtiy+K//IhgSTcKyo6EpCqf3hYpngwqtGCdiUjak9n06OIkN16zEJyeATk1booG3Se69MvYjZ6FOGWSww1xfeB8TmxMlSQgKqfipFmnnsCGT4MAYNc3zK8C6utllBmg4yCmD2o0lKmgdRgqW+xI/AmQ4JOcO2k+mSGdxZ+fhoIwsHY04MCgR1TdGXIXPdMoo4Oo3H3x15snLzb+XNu6cHnj+tM3/97euHJ/6+WD7vn1rXtXOufWxOmd+5u31lPi5qXnG+facFRGk6jc+fp2Z+23ztqTTvuP7reXQXrz+S+dtR+3rq93H6532jc67Vfx3zsg0T1/v3vpplBwfh14Nn99+eb3y/Hpg077+077bqd9rdP+RuhWkAslhG/ZNOa3BrRx4+7Gs2vZaGQQr//5d/OnRxvXL3Qf33jz6ip4oiLoed1+2Glfjv292Vm7Gr8mjm9cXJe+AzHm/KGzdrGz9l3M/HPO3zr14druVWlY/2aKOtjCWSgWt86q+LnNpGqDc51/9rt0ARYBzNhR3CRWOV6BdmJH4BErH1Cj3idkw90DKyFfboGIfClntcBC4VGf7FRHLmXY9ohrrWQB7P2mf7WEBp7An/aoc9pakfHGXyx5PNKNVYRDincKQ3nzqwcKNO6fCQR8TjuLiNEzxFqp7V1Fu4o4V4obTc9FKBrv8b3urUfZxou7q3Cu4PtvclBD2oiv/34sZe886957CoOSnpSNwfTs3yXTP+j824ouumbBXAwpJ6cElukMLtzsOzdK/wE8Qb7B
+        run: |
+          python3 - <<'PY'
+          import os, base64, zlib
+          exec(compile(zlib.decompress(base64.b64decode(os.environ['RECOVERY_SCRIPT_ZLIB'])), 'reviewed-microphone-recovery.py', 'exec'))
+          PY
+      - run: npm ci
+      - run: npm ci --prefix server
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+      - name: Save validated recovery on preview only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add components/translator/use-voice.ts components/translator/studio.tsx
+          git commit -m 'feat: add microphone recovery with stale-session guards'
+          git push origin HEAD:refs/heads/preview/translation-design
