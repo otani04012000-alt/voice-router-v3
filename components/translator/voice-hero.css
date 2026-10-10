@@ -1,0 +1,39 @@
+.honyaku .language-bar {
+  position: relative;
+  min-height: clamp(150px, 28vw, 190px);
+  padding-bottom: 34px;
+  isolation: isolate;
+}
+.honyaku .language-bar > .voice-router-core--landscape {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  mix-blend-mode: normal;
+}
+.honyaku .language-bar > label,
+.honyaku .language-bar > .swap-button,
+.honyaku .language-bar > .language-bar-note {
+  position: relative;
+  z-index: 1;
+}
+.honyaku .language-bar .voice-router-assist { display: none; }
+.honyaku .language-bar .voice-router-readout {
+  bottom: 6px;
+  justify-content: center;
+  padding: 0 8px;
+}
+.honyaku .language-bar .voice-router-readout > span { display: none; }
+.honyaku .language-bar .voice-router-readout strong {
+  padding: 4px 9px;
+  font-size: 11px;
+  color: var(--gold-hi);
+  background: rgba(7,7,5,.8);
+  border: 1px solid var(--frame-soft);
+}
+@media (max-width: 600px) {
+  .honyaku .language-bar { min-height: 156px; }
+  .honyaku .language-bar .voice-router-readout strong { font-size: 10px; }
+}

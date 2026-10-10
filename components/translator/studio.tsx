@@ -50,6 +50,7 @@ import SecretaryPresence from "./secretary-presence";
 import VoiceRouterCore, { type RouterVisualState } from "./voice-router-core";
 import "./studio.css";
 import "./wave-theme.css";
+import "./voice-hero.css";
 
 const SAVED_KEY = "honyaku.saved.v1";
 const HISTORY_KEY = "honyaku.history.v1";
@@ -912,6 +913,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
             aria-label={uiText("会話の言語")}
           >
             <VoiceRouterCore
+              variant="landscape"
               state={routerState}
               signal={voice.signal}
               sourceLabel={LANGUAGES[source].native}
@@ -1361,6 +1363,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
               <i className={engine === "unavailable" ? "offline" : ""} />
             </span>
           </div>
+          {!conversationMode && (
           <section className="voice-landscape" aria-label={uiText("音声入力の状態")}>
             <div className="voice-landscape-heading">
               <span>{uiText("声の庭")}</span>
@@ -1379,6 +1382,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
               levelLabel={uiText("声の強さ")}
             />
           </section>
+          )}
           {turns.length > 0 && (
             <section className="conversation-section">
               <div className="section-heading">
