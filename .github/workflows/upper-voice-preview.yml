@@ -1,0 +1,56 @@
+name: Upper voice UI preview
+on:
+  push:
+    branches: [preview/translation-design]
+    paths: [.github/workflows/upper-voice-preview.yml]
+permissions:
+  contents: write
+jobs:
+  upper-voice:
+    if: github.repository == 'otani04012000-alt/voice-router-v3' && github.ref == 'refs/heads/preview/translation-design'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: preview/translation-design
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Connect existing voice motion between language selectors
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          p=Path('components/translator/studio.tsx')
+          b=p.read_bytes()
+          if hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()!='590764afe75fa2bdce5725a065a119baca408d3b':
+              raise SystemExit('Studio changed; refusing to overwrite')
+          s=b.decode()
+          def replace(old,new):
+              global s
+              if s.count(old)!=1: raise SystemExit('Layout anchor mismatch')
+              s=s.replace(old,new,1)
+          replace('import "./wave-theme.css";', 'import "./wave-theme.css";\nimport "./voice-hero.css";')
+          replace('            <VoiceRouterCore\n              state={routerState}', '            <VoiceRouterCore\n              variant="landscape"\n              state={routerState}')
+          replace('          <section className="voice-landscape" aria-label={uiText("音声入力の状態")}>', '          {!conversationMode && (\n          <section className="voice-landscape" aria-label={uiText("音声入力の状態")}>')
+          replace('          </section>\n          {turns.length > 0 && (', '          </section>\n          )}\n          {turns.length > 0 && (')
+          style=Path('components/translator/voice-hero.css')
+          if style.exists(): raise SystemExit('Hero style already exists')
+          p.write_text(s)
+          style.write_text('.honyaku .language-bar {\n  position: relative;\n  min-height: clamp(150px, 28vw, 190px);\n  padding-bottom: 34px;\n  isolation: isolate;\n}\n.honyaku .language-bar > .voice-router-core--landscape {\n  position: absolute;\n  inset: 0;\n  width: 100%;\n  height: 100%;\n  z-index: 0;\n  pointer-events: none;\n  mix-blend-mode: normal;\n}\n.honyaku .language-bar > label,\n.honyaku .language-bar > .swap-button,\n.honyaku .language-bar > .language-bar-note {\n  position: relative;\n  z-index: 1;\n}\n.honyaku .language-bar .voice-router-assist { display: none; }\n.honyaku .language-bar .voice-router-readout {\n  bottom: 6px;\n  justify-content: center;\n  padding: 0 8px;\n}\n.honyaku .language-bar .voice-router-readout > span { display: none; }\n.honyaku .language-bar .voice-router-readout strong {\n  padding: 4px 9px;\n  font-size: 11px;\n  color: var(--gold-hi);\n  background: rgba(7,7,5,.8);\n  border: 1px solid var(--frame-soft);\n}\n@media (max-width: 600px) {\n  .honyaku .language-bar { min-height: 156px; }\n  .honyaku .language-bar .voice-router-readout strong { font-size: 10px; }\n}\n')
+          PY
+      - run: npm ci
+      - run: npm ci --prefix server
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+      - name: Save validated upper UI on preview only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add components/translator/studio.tsx components/translator/voice-hero.css
+          git commit -m 'feat: bring voice motion into upper language interface'
+          git push origin HEAD:refs/heads/preview/translation-design
