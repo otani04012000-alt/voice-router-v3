@@ -1,4 +1,5 @@
 "use client";
+import VoiceGarden from "./voice-garden";
 
 import { useEffect, useRef, type RefObject } from "react";
 import type { VoiceSignal } from "./use-voice";
@@ -668,6 +669,7 @@ export default function VoiceRouterCore({
 
   return (
     <div ref={shell} className={`voice-router-core voice-router-core--${variant}`} data-state={state} aria-label={`${sourceLabel}から${targetLabel}へ、${phaseLabel}`}>
+      {variant === "landscape" && <VoiceGarden state={state} signal={signal} />}
       <canvas ref={canvas} aria-hidden="true" />
       <div className="voice-router-readout" aria-hidden="true">
         <span>{sourceLabel}</span>
