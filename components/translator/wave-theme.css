@@ -1,13 +1,17 @@
-/* Preview-only restrained ink, gold and silver-blue surface. */
-.honyaku{--gold:#bda16a;--gold-hi:#e1cc9e;--ink:#f0ede5;--sub:#c7ccd0;--muted:#99a8b0;background:radial-gradient(ellipse at 50% 0%,rgba(87,117,134,.15),transparent 55%),linear-gradient(180deg,#111b24,#0c131b)!important;color:#f0ede5}
+/* Reuse the existing translation-wave.png; keep all conversation logic unchanged. */
+.honyaku{--gold:#bda16a;--gold-hi:#e1cc9e;--ink:#f0ede5;--sub:#c7ccd0;--muted:#99a8b0;isolation:isolate;background:linear-gradient(180deg,#111b24,#0c131b)!important;color:#f0ede5}
+.honyaku::before,.honyaku[data-conversation-state="listening"]::before{content:"";display:block!important;position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.48;transform:none;filter:none;mix-blend-mode:normal;mask-image:none;-webkit-mask-image:none;background-image:radial-gradient(circle at 50% 100%,transparent 18px,rgba(164,188,203,.16) 19px,transparent 20px,transparent 26px,rgba(164,188,203,.12) 27px,transparent 28px),radial-gradient(circle at 0 50%,transparent 18px,rgba(164,188,203,.16) 19px,transparent 20px,transparent 26px,rgba(164,188,203,.12) 27px,transparent 28px);background-size:56px 28px;background-repeat:repeat;animation:preview-diagonal-pattern 32s linear infinite}
+@keyframes preview-diagonal-pattern{from{background-position:0 0,0 0}to{background-position:56px 56px,56px 56px}}
+.honyaku .studio-body{position:relative;z-index:1}
 .honyaku .language-bar{background:radial-gradient(ellipse at 50% 50%,rgba(119,173,195,.13),transparent 63%),linear-gradient(150deg,#192a35,#101c26)!important;border-color:rgba(188,204,207,.25)!important}
-.honyaku .input-card{background:linear-gradient(150deg,rgba(29,47,59,.9),rgba(17,30,40,.94))!important;border-color:rgba(165,189,201,.24)!important}
-.honyaku .input-card::before{background:radial-gradient(circle at 50% 100%,transparent 18px,rgba(164,188,203,.16) 19px,transparent 20px,transparent 26px,rgba(164,188,203,.12) 27px,transparent 28px),radial-gradient(circle at 0 50%,transparent 18px,rgba(164,188,203,.16) 19px,transparent 20px,transparent 26px,rgba(164,188,203,.12) 27px,transparent 28px)!important;background-size:56px 28px!important;mask-image:linear-gradient(180deg,transparent 12%,rgba(0,0,0,.22) 40%,#000 100%);animation:none!important}
+.honyaku .input-card{position:relative;isolation:isolate;background:linear-gradient(150deg,#1d2f3b,#111e28)!important;border-color:rgba(165,189,201,.3)!important}
+.honyaku .input-card::before{content:"";display:block!important;position:absolute;inset:0;width:auto;border-radius:inherit;z-index:-1;pointer-events:none;background-image:url('/translation-wave.png')!important;background-size:340px auto!important;background-position:50% 50%;background-repeat:repeat;opacity:.26;filter:grayscale(.45) saturate(.55);mix-blend-mode:screen;mask-image:linear-gradient(180deg,rgba(0,0,0,.6),rgba(0,0,0,.3) 40%,#000 100%);-webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.6),rgba(0,0,0,.3) 40%,#000 100%);animation:none!important}
 .honyaku .input-card form{background:transparent!important}
-.honyaku textarea{background:rgba(9,20,29,.6)!important;color:#efeee9!important;border-color:rgba(167,192,204,.23)!important}
-.honyaku textarea::placeholder{color:#95a8b3!important}
+.honyaku textarea{background:rgba(9,20,29,.68)!important;color:#efeee9!important;border-color:rgba(167,192,204,.23)!important}
+.honyaku textarea::placeholder{color:#a2b5c0!important}
 .honyaku .mic-button{background:linear-gradient(135deg,#ddc69b,#b69a63)!important;color:#171710!important}
 .honyaku .mic-button.listening{background:linear-gradient(135deg,#d8eaf0,#93b9c9)!important;color:#10212b!important}
 .honyaku .input-card .card-heading::before{color:#d8c293}
 .honyaku .language-bar>.voice-router-core--landscape{filter:none!important}
 .honyaku .language-bar::after{display:none!important}
+@media(prefers-reduced-motion:reduce){.honyaku::before,.honyaku[data-conversation-state="listening"]::before{animation:none}}
