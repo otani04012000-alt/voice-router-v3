@@ -256,8 +256,25 @@
 
 .honyaku .voice-garden-status[data-state="listening"] {
   opacity: 1;
+  color: #dff8ff;
   transform: translate(-50%, -50%) scale(1);
   animation: voice-garden-listening .58s ease-in-out infinite alternate;
+}
+
+.honyaku .voice-garden-status[data-state="listening"] .voice-garden-status-core {
+  border-color: rgba(150, 226, 250, .9);
+  background: rgba(3, 18, 28, .84);
+  box-shadow: 0 0 32px rgba(90, 198, 235, .48), inset 0 0 20px rgba(114, 205, 236, .18);
+}
+
+.honyaku .voice-garden-status[data-state="listening"] .voice-garden-status-core i {
+  background: #ddf8ff;
+  box-shadow: 0 0 12px rgba(114, 215, 248, .95);
+}
+
+.honyaku .voice-garden-status[data-state="listening"] strong {
+  border-color: rgba(136, 216, 243, .52);
+  background: rgba(3, 17, 27, .84);
 }
 
 .honyaku .voice-garden-status[data-state="ending"] {
