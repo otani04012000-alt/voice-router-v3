@@ -203,6 +203,100 @@
   filter: contrast(1.22) saturate(1.08) drop-shadow(0 0 16px rgba(211, 181, 106, .24));
 }
 
+.honyaku .voice-garden-status {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  justify-items: center;
+  gap: 9px;
+  width: min(210px, 42%);
+  color: #fff0bf;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(.7);
+  pointer-events: none;
+}
+
+.honyaku .voice-garden-status-core {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  border: 1px solid rgba(239, 203, 111, .78);
+  border-radius: 50%;
+  background: rgba(2, 10, 16, .82);
+  box-shadow: 0 0 26px rgba(218, 181, 91, .28), inset 0 0 18px rgba(218, 181, 91, .12);
+}
+
+.honyaku .voice-garden-status-core i {
+  width: 3px;
+  height: 20px;
+  margin: 0 2px;
+  border-radius: 2px;
+  background: #ffe8a5;
+  box-shadow: 0 0 10px rgba(255, 220, 124, .9);
+}
+
+.honyaku .voice-garden-status-core i:nth-child(1) { transform: translate(-11px, 3px); }
+.honyaku .voice-garden-status-core i:nth-child(2) { position: absolute; height: 31px; }
+.honyaku .voice-garden-status-core i:nth-child(3) { position: absolute; transform: translate(11px, -2px); height: 24px; }
+.honyaku .voice-garden-status-core b { font-size: 34px; color: #a4ffd0; text-shadow: 0 0 15px rgba(95, 227, 154, .85); }
+.honyaku .voice-garden-status strong {
+  padding: 6px 12px;
+  border: 1px solid rgba(232, 201, 106, .38);
+  border-radius: 999px;
+  background: rgba(2, 9, 15, .78);
+  font-size: 12px;
+  letter-spacing: .08em;
+  white-space: nowrap;
+  box-shadow: 0 7px 22px rgba(0, 0, 0, .35);
+}
+
+.honyaku .voice-garden-status[data-state="listening"] {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  animation: voice-garden-listening .58s ease-in-out infinite alternate;
+}
+
+.honyaku .voice-garden-status[data-state="ending"] {
+  opacity: 1;
+  color: #ffd08b;
+  animation: voice-garden-collapse 1.35s linear forwards;
+}
+
+.honyaku .voice-garden-status[data-state="ending"] .voice-garden-status-core {
+  border-color: #ffae48;
+  box-shadow: 0 0 36px rgba(255, 135, 61, .52), inset 0 0 22px rgba(255, 135, 61, .2);
+}
+
+.honyaku .voice-garden-status[data-state="stopped"] {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(.82);
+  color: #a4ffd0;
+  animation: voice-garden-finished 1.4s ease-out both;
+}
+
+.honyaku .voice-garden-status[data-state="stopped"] i { display: none; }
+
+@keyframes voice-garden-listening {
+  from { filter: brightness(.9); transform: translate(-50%, -50%) scale(.94); }
+  to { filter: brightness(1.35); transform: translate(-50%, -50%) scale(1.06); }
+}
+
+@keyframes voice-garden-collapse {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  78% { opacity: 1; transform: translate(-50%, -50%) scale(.38) rotate(540deg); }
+  100% { opacity: .12; transform: translate(-50%, -50%) scale(.08) rotate(720deg); }
+}
+
+@keyframes voice-garden-finished {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(.22); }
+  35% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(.82); }
+}
+
 .honyaku .language-bar > .voice-router-core--landscape {
   filter: none !important;
 }

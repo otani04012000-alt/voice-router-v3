@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 type VoiceGardenProps = {
   state: string;
   signal: { current: { level: number } };
+  phaseLabel: string;
 };
 
 type Point = { x: number; y: number; strength: number };
@@ -17,7 +18,7 @@ function seededNoise(seed: number) {
   return value - Math.floor(value);
 }
 
-export default function VoiceGarden({ state, signal }: VoiceGardenProps) {
+export default function VoiceGarden({ state, signal, phaseLabel }: VoiceGardenProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef(state);
 
@@ -33,6 +34,8 @@ export default function VoiceGarden({ state, signal }: VoiceGardenProps) {
     const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
     let frame = 0;
     let lastTime = performance.now();
+    let stateStarted = lastTime;
+    let previousState = stateRef.current;
     let energy = 0;
     let stopped = 0;
 
@@ -68,6 +71,12 @@ export default function VoiceGarden({ state, signal }: VoiceGardenProps) {
 
       const active = stateRef.current === "listening" || stateRef.current === "ending";
       const ended = stateRef.current === "stopped";
+      if (stateRef.current !== previousState) {
+        previousState = stateRef.current;
+        stateStarted = now;
+      }
+      const stateElapsed = now - stateStarted;
+      const closing = stateRef.current === "ending" ? Math.min(1, stateElapsed / 1350) : 0;
       const rawLevel = Number.isFinite(signal.current.level) ? signal.current.level : 0;
       const targetEnergy = active ? Math.max(0, Math.min(1, rawLevel * 2.4)) : 0;
       energy += (targetEnergy - energy) * (1 - Math.exp(-delta * 8));
@@ -95,6 +104,11 @@ export default function VoiceGarden({ state, signal }: VoiceGardenProps) {
         { x: .62, y: .9 },
       ];
       const points: Point[] = [];
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const activity = stateRef.current === "listening" ? 1 : 0;
+      const flowRate = .36 + activity * (1.1 + energy * 4.2);
+      const breath = Math.sin(time * (1.4 + energy * 2.4)) * (.035 + activity * .045);
 
       for (let index = 0; index < 156; index += 1) {
         const hub = hubs[Math.floor(seededNoise(index + 4) * hubs.length)];
@@ -102,11 +116,20 @@ export default function VoiceGarden({ state, signal }: VoiceGardenProps) {
         const radius = Math.pow(seededNoise(index + 43), 1.7);
         const spreadX = width * (.07 + seededNoise(index + 61) * .16);
         const spreadY = height * (.08 + seededNoise(index + 79) * .18);
-        const hubDriftX = Math.sin(time * .19 + index * .31) * width * .025;
-        const hubDriftY = Math.cos(time * .15 + index * .23) * height * .026;
+        const hubDriftX = Math.sin(time * flowRate + index * .31) * width * (.025 + activity * .035 + energy * .045);
+        const hubDriftY = Math.cos(time * flowRate * .82 + index * .23) * height * (.026 + activity * .032 + energy * .04);
+        const rawX = hub.x * width + Math.cos(angle + time * flowRate * .08) * spreadX * radius + hubDriftX;
+        const rawY = hub.y * height + Math.sin(angle - time * flowRate * .065) * spreadY * radius + hubDriftY;
+        const dx = rawX - centerX;
+        const dy = rawY - centerY;
+        const radialScale = 1 + breath + energy * .24;
+        const collapseScale = stateRef.current === "ending" ? (1 - closing) ** 2 : ended ? 0 : radialScale;
+        const collapseSpin = closing * Math.PI * 10;
+        const cos = Math.cos(collapseSpin);
+        const sin = Math.sin(collapseSpin);
         points.push({
-          x: hub.x * width + Math.cos(angle) * spreadX * radius + hubDriftX,
-          y: hub.y * height + Math.sin(angle) * spreadY * radius + hubDriftY,
+          x: centerX + (dx * cos - dy * sin) * collapseScale,
+          y: centerY + (dx * sin + dy * cos) * collapseScale,
           strength: .5 + seededNoise(index + 97) * .9,
         });
       }
@@ -116,14 +139,14 @@ export default function VoiceGarden({ state, signal }: VoiceGardenProps) {
       for (let strand = 0; strand < 82; strand += 1) {
         const start = points[(strand * 17) % points.length];
         const end = points[(strand * 47 + 29) % points.length];
-        const sway = Math.sin(time * .21 + strand * .47);
+        const sway = Math.sin(time * flowRate * .7 + strand * .47);
         context.beginPath();
         context.moveTo(start.x, start.y);
         context.bezierCurveTo(
-          width * seededNoise(strand + 121),
-          height * (.5 + sway * .24),
-          width * seededNoise(strand + 211),
-          height * (.5 - sway * .24),
+          centerX + (width * seededNoise(strand + 121) - centerX) * (stateRef.current === "ending" ? (1 - closing) ** 2 : 1),
+          centerY + (height * (.5 + sway * .24) - centerY) * (stateRef.current === "ending" ? (1 - closing) ** 2 : 1),
+          centerX + (width * seededNoise(strand + 211) - centerX) * (stateRef.current === "ending" ? (1 - closing) ** 2 : 1),
+          centerY + (height * (.5 - sway * .24) - centerY) * (stateRef.current === "ending" ? (1 - closing) ** 2 : 1),
           end.x,
           end.y,
         );
@@ -179,6 +202,40 @@ export default function VoiceGarden({ state, signal }: VoiceGardenProps) {
         context.fill();
       }
 
+      if (stateRef.current === "listening") {
+        const listeningRadius = Math.min(width, height) * (.105 + energy * .09 + Math.sin(time * 4.2) * .012);
+        for (let ring = 0; ring < 3; ring += 1) {
+          context.beginPath();
+          context.arc(centerX, centerY, listeningRadius + ring * 11, 0, Math.PI * 2);
+          context.strokeStyle = `rgba(${ring === 0 ? PALE_GOLD.join(",") : GOLD.join(",")},${.42 - ring * .1 + energy * .28})`;
+          context.lineWidth = ring === 0 ? 2.2 : .8;
+          context.stroke();
+        }
+      }
+
+      if (stateRef.current === "ending") {
+        const countdownRadius = Math.max(5, Math.min(width, height) * .23 * (1 - closing * .94));
+        context.beginPath();
+        context.arc(centerX, centerY, countdownRadius, 0, Math.PI * 2);
+        context.fillStyle = `rgba(255,116,70,${.035 + closing * .2})`;
+        context.fill();
+        context.strokeStyle = `rgba(255,${Math.round(196 - closing * 80)},${Math.round(92 - closing * 45)},${.95 - closing * .08})`;
+        context.lineWidth = 3 + closing * 5;
+        context.shadowColor = "rgba(255,137,67,.95)";
+        context.shadowBlur = 18 + closing * 30;
+        context.stroke();
+        context.beginPath();
+        context.arc(centerX, centerY, countdownRadius + 10, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - closing));
+        context.strokeStyle = `rgba(${PALE_GOLD.join(",")},${1 - closing * .35})`;
+        context.lineWidth = 2.2;
+        context.stroke();
+        context.shadowBlur = 0;
+      }
+
+      if (ended) {
+        drawGlow(centerX, centerY, Math.min(width, height) * .16, .36);
+      }
+
       const sweep = reducedMotion ? width * .48 : ((time * width * .07) % (width * 1.5)) - width * .25;
       const beam = context.createLinearGradient(sweep - width * .2, 0, sweep + width * .2, height);
       beam.addColorStop(0, "rgba(218,181,91,0)");
@@ -199,6 +256,15 @@ export default function VoiceGarden({ state, signal }: VoiceGardenProps) {
   return (
     <div className="voice-garden" aria-hidden="true">
       <canvas ref={canvasRef} />
+      <div className="voice-garden-status" data-state={state}>
+        <span className="voice-garden-status-core">
+          <i />
+          <i />
+          <i />
+          {state === "stopped" ? <b>✓</b> : null}
+        </span>
+        <strong>{phaseLabel}</strong>
+      </div>
     </div>
   );
 }

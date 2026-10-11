@@ -669,7 +669,7 @@ export default function VoiceRouterCore({
 
   return (
     <div ref={shell} className={`voice-router-core voice-router-core--${variant}`} data-state={state} aria-label={`${sourceLabel}から${targetLabel}へ、${phaseLabel}`}>
-      {variant === "landscape" && <VoiceGarden state={state} signal={signal} />}
+      {variant === "landscape" && <VoiceGarden state={state} signal={signal} phaseLabel={phaseLabel} />}
       <canvas ref={canvas} aria-hidden="true" />
       <div className="voice-router-readout" aria-hidden="true">
         <span>{sourceLabel}</span>
