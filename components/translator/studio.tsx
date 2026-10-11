@@ -50,8 +50,8 @@ import SecretaryPresence from "./secretary-presence";
 import VoiceRouterCore, { type RouterVisualState } from "./voice-router-core";
 import EnergyField from "./energy-field";
 import "./studio.css";
-import "./wave-theme.css";
 import "./voice-hero.css";
+import "./wave-theme.css";
 
 const SAVED_KEY = "honyaku.saved.v1";
 const HISTORY_KEY = "honyaku.history.v1";
