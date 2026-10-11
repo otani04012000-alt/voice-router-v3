@@ -48,6 +48,7 @@ import { nextConversationTurn } from "./conversation-turn";
 import { UI_LANGUAGES, isUiLanguage, resolveUiLanguage, translateUi, type UiLanguage } from "./ui-language";
 import SecretaryPresence from "./secretary-presence";
 import VoiceRouterCore, { type RouterVisualState } from "./voice-router-core";
+import EnergyField from "./energy-field";
 import "./studio.css";
 import "./wave-theme.css";
 import "./voice-hero.css";
@@ -766,6 +767,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
 
   return (
     <main className="honyaku" lang={uiLanguage === "zh" ? "zh-CN" : uiLanguage} data-ui-language={uiLanguage} data-mic-phase={voice.micPhase} data-conversation-state={busy ? "translating" : voice.listening ? "listening" : result ? "delivered" : "idle"}>
+      <EnergyField state={routerState} signal={voice.signal} />
       <aside className="studio-rail">
         <Link href="/" className="brand-mark" aria-label={uiText("翻訳王 ホーム")}>
           <Languages size={24} />
@@ -934,6 +936,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
             className={`language-bar ${swapping ? "swapping" : ""}`}
             aria-label={uiText("会話の言語")}
           >
+            <span className="energy-rail" aria-hidden="true" />
             <VoiceRouterCore
               variant="landscape"
               state={routerState}
@@ -1010,6 +1013,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
             <section
               className={`input-card ${voice.listening ? "is-listening" : ""}`}
             >
+              <span className="energy-rail" aria-hidden="true" />
               <div className="card-heading">
                 <span className="number-tag">01</span>
                 <h2>{uiText("伝えたいこと")}</h2>
@@ -1231,6 +1235,7 @@ export default function TranslationStudio({ roomId }: { roomId?: string }) {
               aria-busy={busy}
               aria-live="polite"
             >
+              <span className="energy-rail" aria-hidden="true" />
               <div className="card-heading">
                 <span className="number-tag">02</span>
                 <h2>{uiText("届くことば")}</h2>
