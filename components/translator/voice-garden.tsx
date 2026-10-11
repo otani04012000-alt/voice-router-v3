@@ -83,43 +83,86 @@ export default function VoiceGarden({ state, signal }: VoiceGardenProps) {
       context.fillStyle = backdrop;
       context.fillRect(0, 0, width, height);
 
-      const columns = 10;
-      const rows = 8;
+      const hubs = [
+        { x: .08, y: .12 },
+        { x: .34, y: .2 },
+        { x: .72, y: .12 },
+        { x: .92, y: .34 },
+        { x: .18, y: .52 },
+        { x: .55, y: .48 },
+        { x: .82, y: .68 },
+        { x: .28, y: .84 },
+        { x: .62, y: .9 },
+      ];
       const points: Point[] = [];
 
-      for (let row = 0; row < rows; row += 1) {
-        for (let column = 0; column < columns; column += 1) {
-          const index = row * columns + column;
-          const offsetX = (seededNoise(index + 1) - .5) * width * .105;
-          const offsetY = (seededNoise(index + 31) - .5) * height * .13;
-          const driftX = Math.sin(time * .16 + index * 1.37) * width * .012;
-          const driftY = Math.cos(time * .13 + index * .91) * height * .016;
-          points.push({
-            x: (column + .35 + (row % 2) * .28) * width / columns + offsetX + driftX,
-            y: (row + .32) * height / rows + offsetY + driftY,
-            strength: .55 + seededNoise(index + 73) * .75,
-          });
-        }
+      for (let index = 0; index < 156; index += 1) {
+        const hub = hubs[Math.floor(seededNoise(index + 4) * hubs.length)];
+        const angle = seededNoise(index + 17) * Math.PI * 2;
+        const radius = Math.pow(seededNoise(index + 43), 1.7);
+        const spreadX = width * (.07 + seededNoise(index + 61) * .16);
+        const spreadY = height * (.08 + seededNoise(index + 79) * .18);
+        const hubDriftX = Math.sin(time * .19 + index * .31) * width * .025;
+        const hubDriftY = Math.cos(time * .15 + index * .23) * height * .026;
+        points.push({
+          x: hub.x * width + Math.cos(angle) * spreadX * radius + hubDriftX,
+          y: hub.y * height + Math.sin(angle) * spreadY * radius + hubDriftY,
+          strength: .5 + seededNoise(index + 97) * .9,
+        });
       }
 
-      const connectionRange = Math.max(width, height) * .235;
       context.globalCompositeOperation = "screen";
+
+      for (let strand = 0; strand < 82; strand += 1) {
+        const start = points[(strand * 17) % points.length];
+        const end = points[(strand * 47 + 29) % points.length];
+        const sway = Math.sin(time * .21 + strand * .47);
+        context.beginPath();
+        context.moveTo(start.x, start.y);
+        context.bezierCurveTo(
+          width * seededNoise(strand + 121),
+          height * (.5 + sway * .24),
+          width * seededNoise(strand + 211),
+          height * (.5 - sway * .24),
+          end.x,
+          end.y,
+        );
+        context.strokeStyle = `rgba(${GOLD.join(",")},${(.045 + energy * .035) * (1 - stopped * .7)})`;
+        context.lineWidth = .45 + (strand % 5 === 0 ? .7 : 0);
+        context.stroke();
+      }
+
+      for (let pass = 0; pass < 2; pass += 1) {
+        for (let first = 0; first < points.length; first += 1) {
+          const a = points[first];
+          for (let link = 0; link < 5; link += 1) {
+            const jump = 3 + Math.floor(seededNoise(first * 13 + link * 37) * (points.length - 4));
+            const b = points[(first + jump) % points.length];
+            const distance = Math.hypot(a.x - b.x, a.y - b.y);
+            const distanceFade = Math.max(.22, 1 - distance / (Math.max(width, height) * 1.15));
+            const baseAlpha = pass === 0 ? .045 : .13;
+            const alpha = (baseAlpha + energy * .05) * distanceFade * a.strength * (1 - stopped * .7);
+            context.beginPath();
+            context.moveTo(a.x, a.y);
+            context.lineTo(b.x, b.y);
+            context.strokeStyle = `rgba(${GOLD.join(",")},${alpha})`;
+            context.lineWidth = pass === 0 ? 2.4 : .5 + a.strength * .28;
+            context.stroke();
+          }
+        }
+      }
 
       for (let first = 0; first < points.length; first += 1) {
         const a = points[first];
         for (let second = first + 1; second < points.length; second += 1) {
-          if ((first * 7 + second * 11) % 5 === 0) continue;
           const b = points[second];
           const distance = Math.hypot(a.x - b.x, a.y - b.y);
-          if (distance > connectionRange) continue;
-
-          const fade = 1 - distance / connectionRange;
-          const alpha = (.075 + energy * .05) * fade * a.strength * (1 - stopped * .7);
+          if (distance > Math.max(width, height) * .115) continue;
           context.beginPath();
           context.moveTo(a.x, a.y);
           context.lineTo(b.x, b.y);
-          context.strokeStyle = `rgba(${GOLD.join(",")},${alpha})`;
-          context.lineWidth = .55 + fade * .6;
+          context.strokeStyle = `rgba(${PALE_GOLD.join(",")},${(.12 + energy * .05) * (1 - stopped * .7)})`;
+          context.lineWidth = .55;
           context.stroke();
         }
       }
@@ -127,20 +170,20 @@ export default function VoiceGarden({ state, signal }: VoiceGardenProps) {
       for (let index = 0; index < points.length; index += 1) {
         const point = points[index];
         const pulse = .72 + Math.sin(time * .8 + index * .77) * .28;
-        if (index % 3 === 0) {
-          drawGlow(point.x, point.y, 8 + point.strength * 8, (.12 + energy * .08) * pulse);
+        if (index % 5 === 0) {
+          drawGlow(point.x, point.y, 10 + point.strength * 12, (.16 + energy * .1) * pulse);
         }
         context.beginPath();
-        context.arc(point.x, point.y, .75 + point.strength * .65, 0, Math.PI * 2);
-        context.fillStyle = `rgba(${PALE_GOLD.join(",")},${.3 + point.strength * .25})`;
+        context.arc(point.x, point.y, .55 + point.strength * .52, 0, Math.PI * 2);
+        context.fillStyle = `rgba(${PALE_GOLD.join(",")},${.42 + point.strength * .3})`;
         context.fill();
       }
 
       const sweep = reducedMotion ? width * .48 : ((time * width * .07) % (width * 1.5)) - width * .25;
       const beam = context.createLinearGradient(sweep - width * .2, 0, sweep + width * .2, height);
       beam.addColorStop(0, "rgba(218,181,91,0)");
-      beam.addColorStop(.48, `rgba(255,229,151,${.08 + energy * .08})`);
-      beam.addColorStop(.52, `rgba(218,181,91,${.16 + energy * .1})`);
+      beam.addColorStop(.48, `rgba(255,229,151,${.055 + energy * .06})`);
+      beam.addColorStop(.52, `rgba(218,181,91,${.1 + energy * .08})`);
       beam.addColorStop(1, "rgba(218,181,91,0)");
       context.fillStyle = beam;
       context.fillRect(0, 0, width, height);
