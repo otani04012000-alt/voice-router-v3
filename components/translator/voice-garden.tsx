@@ -1,28 +1,161 @@
 "use client";
-import {useEffect,useRef} from "react";
-const VS="attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}";
-const FS=`precision mediump float;uniform vec2 R;uniform float T,A;
-float shape(vec3 p){float a=atan(p.y,p.x);float fold=sin(a*3.+T*.4+p.z*3.)*.068+sin(a*5.-T*.3)*.032;return length(p)-(.58+A*.13+fold+sin(p.x*5.+p.y*4.-T)*.03);}
-vec3 normal(vec3 p){vec2 e=vec2(.003,0.);return normalize(vec3(shape(p+e.xyy)-shape(p-e.xyy),shape(p+e.yxy)-shape(p-e.yxy),shape(p+e.yyx)-shape(p-e.yyx)));}
-void main(){vec2 uv=(gl_FragCoord.xy-.5*R)/R.y;vec3 ro=vec3(0.,0.,3.);vec3 rd=normalize(vec3(uv,-1.9));float t=0.;bool hit=false;vec3 p=ro;for(int i=0;i<56;i++){p=ro+rd*t;float d=shape(p);if(d<.003){hit=true;break;}t+=max(.002,d*.65);if(t>5.)break;}vec3 col=vec3(0.);float alpha=0.;if(hit){vec3 n=normal(p),view=-rd;float fr=pow(1.-max(dot(n,view),0.),2.25);vec3 l=normalize(vec3(.6,.8,1.));float spec=pow(max(dot(reflect(-l,n),view),0.),42.);float bands=pow(.5+.5*sin(p.x*18.+sin(p.y*12.+T)*2.+p.z*7.-T),14.);vec3 base=mix(vec3(.025,.065,.105),vec3(.26,.43,.53),smoothstep(-.7,.7,p.y));vec3 silver=vec3(.76,.93,1.);vec3 gold=vec3(1.,.76,.25);col=base*(.78+max(dot(n,l),0.)*.58+A*.22)+silver*(fr*.78+spec*.72)+gold*bands*(.22+A*.34);alpha=.88+fr*.1;col=col/(vec3(1.)+col*.28);}else{float glow=exp(-length(uv)*6.);col=vec3(.16,.27,.32);alpha=glow*(.018+A*.025);}gl_FragColor=vec4(col,alpha);}`;
-export default function VoiceGarden({state,signal}:{state:string;signal:{current:{level:number}}}){
-const net=useRef<HTMLCanvasElement>(null),core=useRef<HTMLCanvasElement>(null),live=useRef(state);
-useEffect(()=>{live.current=state;},[state]);
-useEffect(()=>{const n=net.current,c=core.current;if(!n||!c)return;const ctx=n.getContext("2d");if(!ctx)return;const gl=c.getContext("webgl",{alpha:true});let program:WebGLProgram|null=null,buffer:WebGLBuffer|null=null;const shaders:WebGLShader[]=[];
-if(gl)try{const compile=(type:number,src:string)=>{const sh=gl.createShader(type);if(!sh)throw Error("shader allocation");shaders.push(sh);gl.shaderSource(sh,src);gl.compileShader(sh);if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(sh)||"compile");return sh;};program=gl.createProgram();if(!program)throw Error("program allocation");gl.attachShader(program,compile(gl.VERTEX_SHADER,VS));gl.attachShader(program,compile(gl.FRAGMENT_SHADER,FS));gl.linkProgram(program);if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error("link");gl.useProgram(program);buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);const p=gl.getAttribLocation(program,"p");gl.enableVertexAttribArray(p);gl.vertexAttribPointer(p,2,gl.FLOAT,false,0,0);}catch(e){console.warn("Crystal rendering fallback",e);if(program)gl.deleteProgram(program);program=null;}
-const u=gl&&program?{R:gl.getUniformLocation(program,"R"),T:gl.getUniformLocation(program,"T"),A:gl.getUniformLocation(program,"A")}:null;
-let frame=0,last=performance.now(),energy=0,close=0;const reduced=matchMedia("(prefers-reduced-motion: reduce)").matches;
-const draw=(now:number)=>{const r=n.getBoundingClientRect(),w=r.width,h=r.height,dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;if(w<1||h<1){frame=requestAnimationFrame(draw);return;}const d=Math.min(devicePixelRatio||1,1.35);if(n.width!==Math.round(w*d)||n.height!==Math.round(h*d)){n.width=c.width=Math.round(w*d);n.height=c.height=Math.round(h*d);ctx.setTransform(d,0,0,d,0,0);if(gl)gl.viewport(0,0,c.width,c.height);}
-const phase=live.current,active=phase==="listening"||phase==="ending",ended=phase==="stopped";const raw=signal.current.level,target=active&&Number.isFinite(raw)?Math.max(0,Math.min(1,raw*2.4-.015)):0;energy+=(target-energy)*(1-Math.exp(-dt*(target>energy?18:5)));close+=(Number(ended)-close)*(1-Math.exp(-dt*9));const time=reduced?0:now/1000;
-ctx.clearRect(0,0,w,h);const cx=w/2,cy=h/2,rad=Math.min(w*.23,h*.34)*(.86+energy*.38);const bead=(x:number,y:number,strength:number)=>{const g=ctx.createRadialGradient(x,y,0,x,y,9);g.addColorStop(0,`rgba(255,244,199,${strength})`);g.addColorStop(.2,`rgba(226,190,103,${strength*.72})`);g.addColorStop(.55,`rgba(135,201,220,${strength*.28})`);g.addColorStop(1,"rgba(92,154,178,0)");ctx.fillStyle=g;ctx.fillRect(x-9,y-9,18,18);};
-const halo=ctx.createRadialGradient(cx,cy,rad*.18,cx,cy,rad*1.55);halo.addColorStop(0,`rgba(223,190,108,${.12+energy*.08})`);halo.addColorStop(.42,`rgba(92,158,183,${.08+energy*.05})`);halo.addColorStop(1,"rgba(5,16,24,0)");ctx.fillStyle=halo;ctx.fillRect(0,0,w,h);
-const mesh=Array.from({length:42},(_,i)=>{const col=i%7,row=Math.floor(i/7),wave=reduced?0:Math.sin(time*.24+i*1.71);return{x:(col+.35+(row%2)*.32)*w/7,y:(row+.3)*h/6+wave*h*.035};});
-for(let i=0;i<mesh.length;i++){for(let j=i+1;j<mesh.length;j++){const dx=mesh[i].x-mesh[j].x,dy=mesh[i].y-mesh[j].y,dist=Math.hypot(dx,dy);if(dist<w*.245&&(i+j)%3!==0){ctx.beginPath();ctx.moveTo(mesh[i].x,mesh[i].y);ctx.lineTo(mesh[j].x,mesh[j].y);ctx.strokeStyle=`rgba(218,181,91,${(.055+energy*.045)*(1-dist/(w*.245))})`;ctx.lineWidth=.55;ctx.stroke();}}if(i%2===0)bead(mesh[i].x,mesh[i].y,.18+energy*.18);}
-for(let i=0;i<30;i++){const side=i%2?1:-1,angle=i*2.39996;const ax=cx+side*rad*(.58+(i%4)*.07),ay=cy+Math.sin(angle+time*.35)*rad*.82;const bx=cx+side*w*(.18+(i%5)*.055),by=cy+Math.sin(angle+time*.18)*h*(.23+(i%4)*.035);const bend=(Math.sin(time*.6+angle)*(.06+energy*.07))*h;const path=(p:number)=>{const q=1-p;return {x:q*q*q*ax+3*q*q*p*(ax+side*w*.1)+3*q*p*p*(bx-side*w*.12)+p*p*p*bx,y:q*q*q*ay+3*q*q*p*(ay+bend)+3*q*p*p*(by-bend)+p*p*p*by};};ctx.beginPath();for(let j=0;j<=36;j++){const p=path(j/36);if(j===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);}const gold=i%3===0;ctx.strokeStyle=gold?`rgba(221,190,111,${(.18+energy*.3)*(1-close*.65)})`:`rgba(144,208,232,${(.27+energy*.42)*(1-close*.65)})`;ctx.lineWidth=.55+energy*.75;ctx.stroke();const p=path(reduced?.5:(time*(.11+energy*.13)+i*.113)%1);bead(p.x,p.y,.38+energy*.54);if(i%2===0)bead(bx,by,.26+energy*.34);}
-if(!program){const g=ctx.createRadialGradient(cx-rad*.2,cy-rad*.3,0,cx,cy,rad);g.addColorStop(0,"rgba(171,207,218,.58)");g.addColorStop(.65,"rgba(48,83,99,.42)");g.addColorStop(1,"rgba(20,42,54,0)");ctx.fillStyle=g;ctx.fillRect(cx-rad,cy-rad,rad*2,rad*2);}
-ctx.globalAlpha=1-close;for(let i=0;i<2;i++){bead(cx+(i?1:-1)*rad*.18,cy-rad*.04,.35+energy*.55);}ctx.globalAlpha=1;if(close>.01){ctx.globalAlpha=close;ctx.font=`600 ${Math.min(90,h*.3)}px "Hiragino Mincho ProN",serif`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillStyle="#e1f3fb";ctx.fillText("終",cx,cy);ctx.globalAlpha=1;}
-if(gl&&program&&u){c.style.opacity=String(1-close);gl.useProgram(program);gl.uniform2f(u.R,c.width,c.height);gl.uniform1f(u.T,time);gl.uniform1f(u.A,energy);gl.drawArrays(gl.TRIANGLES,0,3);}frame=requestAnimationFrame(draw);};frame=requestAnimationFrame(draw);
-return()=>{cancelAnimationFrame(frame);if(gl){if(buffer)gl.deleteBuffer(buffer);if(program)gl.deleteProgram(program);for(const sh of shaders)gl.deleteShader(sh);}};
-},[signal]);
-return <div className="voice-garden" aria-hidden="true"><canvas ref={core}/><canvas ref={net}/></div>;
+
+import { useEffect, useRef } from "react";
+
+type VoiceGardenProps = {
+  state: string;
+  signal: { current: { level: number } };
+};
+
+type Point = { x: number; y: number; strength: number };
+
+const GOLD = [218, 181, 91] as const;
+const PALE_GOLD = [255, 236, 174] as const;
+
+function seededNoise(seed: number) {
+  const value = Math.sin(seed * 91.73 + 17.19) * 43758.5453;
+  return value - Math.floor(value);
+}
+
+export default function VoiceGarden({ state, signal }: VoiceGardenProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const stateRef = useRef(state);
+
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext("2d");
+    if (!canvas || !context) return;
+
+    const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let frame = 0;
+    let lastTime = performance.now();
+    let energy = 0;
+    let stopped = 0;
+
+    const drawGlow = (x: number, y: number, radius: number, alpha: number) => {
+      const glow = context.createRadialGradient(x, y, 0, x, y, radius);
+      glow.addColorStop(0, `rgba(${PALE_GOLD.join(",")},${alpha})`);
+      glow.addColorStop(.18, `rgba(${GOLD.join(",")},${alpha * .76})`);
+      glow.addColorStop(1, `rgba(${GOLD.join(",")},0)`);
+      context.fillStyle = glow;
+      context.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+    };
+
+    const draw = (now: number) => {
+      const bounds = canvas.getBoundingClientRect();
+      const width = bounds.width;
+      const height = bounds.height;
+      const delta = Math.min(.05, Math.max(0, (now - lastTime) / 1000));
+      lastTime = now;
+
+      if (width < 1 || height < 1) {
+        frame = requestAnimationFrame(draw);
+        return;
+      }
+
+      const density = Math.min(devicePixelRatio || 1, 1.4);
+      const targetWidth = Math.round(width * density);
+      const targetHeight = Math.round(height * density);
+      if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        context.setTransform(density, 0, 0, density, 0, 0);
+      }
+
+      const active = stateRef.current === "listening" || stateRef.current === "ending";
+      const ended = stateRef.current === "stopped";
+      const rawLevel = Number.isFinite(signal.current.level) ? signal.current.level : 0;
+      const targetEnergy = active ? Math.max(0, Math.min(1, rawLevel * 2.4)) : 0;
+      energy += (targetEnergy - energy) * (1 - Math.exp(-delta * 8));
+      stopped += (Number(ended) - stopped) * (1 - Math.exp(-delta * 8));
+
+      const time = reducedMotion ? 0 : now / 1000;
+      context.clearRect(0, 0, width, height);
+
+      const backdrop = context.createLinearGradient(0, 0, width, height);
+      backdrop.addColorStop(0, "rgba(2,10,17,.66)");
+      backdrop.addColorStop(.48, "rgba(7,18,26,.3)");
+      backdrop.addColorStop(1, "rgba(1,7,12,.72)");
+      context.fillStyle = backdrop;
+      context.fillRect(0, 0, width, height);
+
+      const columns = 10;
+      const rows = 8;
+      const points: Point[] = [];
+
+      for (let row = 0; row < rows; row += 1) {
+        for (let column = 0; column < columns; column += 1) {
+          const index = row * columns + column;
+          const offsetX = (seededNoise(index + 1) - .5) * width * .105;
+          const offsetY = (seededNoise(index + 31) - .5) * height * .13;
+          const driftX = Math.sin(time * .16 + index * 1.37) * width * .012;
+          const driftY = Math.cos(time * .13 + index * .91) * height * .016;
+          points.push({
+            x: (column + .35 + (row % 2) * .28) * width / columns + offsetX + driftX,
+            y: (row + .32) * height / rows + offsetY + driftY,
+            strength: .55 + seededNoise(index + 73) * .75,
+          });
+        }
+      }
+
+      const connectionRange = Math.max(width, height) * .235;
+      context.globalCompositeOperation = "screen";
+
+      for (let first = 0; first < points.length; first += 1) {
+        const a = points[first];
+        for (let second = first + 1; second < points.length; second += 1) {
+          if ((first * 7 + second * 11) % 5 === 0) continue;
+          const b = points[second];
+          const distance = Math.hypot(a.x - b.x, a.y - b.y);
+          if (distance > connectionRange) continue;
+
+          const fade = 1 - distance / connectionRange;
+          const alpha = (.075 + energy * .05) * fade * a.strength * (1 - stopped * .7);
+          context.beginPath();
+          context.moveTo(a.x, a.y);
+          context.lineTo(b.x, b.y);
+          context.strokeStyle = `rgba(${GOLD.join(",")},${alpha})`;
+          context.lineWidth = .55 + fade * .6;
+          context.stroke();
+        }
+      }
+
+      for (let index = 0; index < points.length; index += 1) {
+        const point = points[index];
+        const pulse = .72 + Math.sin(time * .8 + index * .77) * .28;
+        if (index % 3 === 0) {
+          drawGlow(point.x, point.y, 8 + point.strength * 8, (.12 + energy * .08) * pulse);
+        }
+        context.beginPath();
+        context.arc(point.x, point.y, .75 + point.strength * .65, 0, Math.PI * 2);
+        context.fillStyle = `rgba(${PALE_GOLD.join(",")},${.3 + point.strength * .25})`;
+        context.fill();
+      }
+
+      const sweep = reducedMotion ? width * .48 : ((time * width * .07) % (width * 1.5)) - width * .25;
+      const beam = context.createLinearGradient(sweep - width * .2, 0, sweep + width * .2, height);
+      beam.addColorStop(0, "rgba(218,181,91,0)");
+      beam.addColorStop(.48, `rgba(255,229,151,${.08 + energy * .08})`);
+      beam.addColorStop(.52, `rgba(218,181,91,${.16 + energy * .1})`);
+      beam.addColorStop(1, "rgba(218,181,91,0)");
+      context.fillStyle = beam;
+      context.fillRect(0, 0, width, height);
+
+      context.globalCompositeOperation = "source-over";
+      frame = requestAnimationFrame(draw);
+    };
+
+    frame = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(frame);
+  }, [signal]);
+
+  return (
+    <div className="voice-garden" aria-hidden="true">
+      <canvas ref={canvasRef} />
+    </div>
+  );
 }

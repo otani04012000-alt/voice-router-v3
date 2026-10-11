@@ -198,13 +198,9 @@
   pointer-events: none;
 }
 
-.honyaku .voice-garden canvas:first-child {
-  filter: contrast(1.2) saturate(1.12) drop-shadow(0 0 18px rgba(211, 181, 106, .28));
-}
-
-.honyaku .voice-garden canvas:last-child {
+.honyaku .voice-garden canvas {
   mix-blend-mode: screen;
-  filter: contrast(1.12) saturate(1.18);
+  filter: contrast(1.22) saturate(1.08) drop-shadow(0 0 16px rgba(211, 181, 106, .24));
 }
 
 .honyaku .language-bar > .voice-router-core--landscape {
