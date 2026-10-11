@@ -8,6 +8,16 @@ type VoiceGardenProps = {
   phaseLabel: string;
 };
 
+type NetworkPoint = { x: number; y: number; strength: number };
+
+const GOLD = [218, 181, 91] as const;
+const PALE_GOLD = [255, 236, 174] as const;
+
+function seededNoise(seed: number) {
+  const value = Math.sin(seed * 91.73 + 17.19) * 43758.5453;
+  return value - Math.floor(value);
+}
+
 const VERTEX_SHADER = `
 attribute vec2 position;
 void main() {
@@ -127,6 +137,7 @@ void main() {
 }`;
 
 export default function VoiceGarden({ state, signal, phaseLabel }: VoiceGardenProps) {
+  const networkRef = useRef<HTMLCanvasElement>(null);
   const shaderRef = useRef<HTMLCanvasElement>(null);
   const effectsRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef(state);
@@ -136,10 +147,12 @@ export default function VoiceGarden({ state, signal, phaseLabel }: VoiceGardenPr
   }, [state]);
 
   useEffect(() => {
+    const networkCanvas = networkRef.current;
     const shaderCanvas = shaderRef.current;
     const effectsCanvas = effectsRef.current;
+    const networkContext = networkCanvas?.getContext("2d");
     const context = effectsCanvas?.getContext("2d");
-    if (!shaderCanvas || !effectsCanvas || !context) return;
+    if (!networkCanvas || !shaderCanvas || !effectsCanvas || !networkContext || !context) return;
 
     const gl = shaderCanvas.getContext("webgl", { alpha: true, antialias: false });
     let program: WebGLProgram | null = null;
@@ -215,8 +228,9 @@ export default function VoiceGarden({ state, signal, phaseLabel }: VoiceGardenPr
       const pixelWidth = Math.round(width * density);
       const pixelHeight = Math.round(height * density);
       if (effectsCanvas.width !== pixelWidth || effectsCanvas.height !== pixelHeight) {
-        effectsCanvas.width = shaderCanvas.width = pixelWidth;
-        effectsCanvas.height = shaderCanvas.height = pixelHeight;
+        effectsCanvas.width = shaderCanvas.width = networkCanvas.width = pixelWidth;
+        effectsCanvas.height = shaderCanvas.height = networkCanvas.height = pixelHeight;
+        networkContext.setTransform(density, 0, 0, density, 0, 0);
         context.setTransform(density, 0, 0, density, 0, 0);
         gl?.viewport(0, 0, pixelWidth, pixelHeight);
       }
@@ -232,6 +246,107 @@ export default function VoiceGarden({ state, signal, phaseLabel }: VoiceGardenPr
       const elapsed = now - stateStarted;
       const collapse = isEnding ? Math.min(1, elapsed / 1350) : isStopped ? 1 : 0;
       const shaderTime = reducedMotion ? 0 : now / 1000;
+
+      networkContext.clearRect(0, 0, width, height);
+      if (!isStopped) {
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const visibility = 1 - collapse;
+        const collapseScale = isEnding ? Math.pow(visibility, 2.05) : 1;
+        const breathing = 1 + Math.sin(shaderTime * 1.45) * .025 + audio * .18;
+        const spin = collapse * Math.PI * 10;
+        const spinCos = Math.cos(spin);
+        const spinSin = Math.sin(spin);
+        const flow = .42 + (isListening ? 1.05 + audio * 3.4 : 0);
+        const hubs = [
+          { x: .08, y: .12 }, { x: .34, y: .2 }, { x: .72, y: .12 },
+          { x: .92, y: .34 }, { x: .18, y: .52 }, { x: .55, y: .48 },
+          { x: .82, y: .68 }, { x: .28, y: .84 }, { x: .62, y: .9 },
+        ];
+        const points: NetworkPoint[] = [];
+
+        for (let index = 0; index < 132; index += 1) {
+          const hub = hubs[Math.floor(seededNoise(index + 4) * hubs.length)];
+          const angle = seededNoise(index + 17) * Math.PI * 2;
+          const radius = Math.pow(seededNoise(index + 43), 1.7);
+          const spreadX = width * (.07 + seededNoise(index + 61) * .16);
+          const spreadY = height * (.08 + seededNoise(index + 79) * .18);
+          const rawX = hub.x * width
+            + Math.cos(angle + shaderTime * flow * .08) * spreadX * radius
+            + Math.sin(shaderTime * flow + index * .31) * width * (.018 + audio * .03);
+          const rawY = hub.y * height
+            + Math.sin(angle - shaderTime * flow * .065) * spreadY * radius
+            + Math.cos(shaderTime * flow * .82 + index * .23) * height * (.02 + audio * .03);
+          const dx = rawX - centerX;
+          const dy = rawY - centerY;
+          const scale = breathing * collapseScale;
+          points.push({
+            x: centerX + (dx * spinCos - dy * spinSin) * scale,
+            y: centerY + (dx * spinSin + dy * spinCos) * scale,
+            strength: .5 + seededNoise(index + 97) * .9,
+          });
+        }
+
+        const alphaScale = visibility * (.78 + audio * .42);
+        networkContext.globalCompositeOperation = "screen";
+
+        for (let strand = 0; strand < 72; strand += 1) {
+          const start = points[(strand * 17) % points.length];
+          const end = points[(strand * 47 + 29) % points.length];
+          const controlScale = collapseScale * breathing;
+          const sway = Math.sin(shaderTime * (.28 + audio * .42) + strand * .47);
+          const controlOneX = centerX + (width * seededNoise(strand + 121) - centerX) * controlScale;
+          const controlOneY = centerY + (height * (.5 + sway * .24) - centerY) * controlScale;
+          const controlTwoX = centerX + (width * seededNoise(strand + 211) - centerX) * controlScale;
+          const controlTwoY = centerY + (height * (.5 - sway * .24) - centerY) * controlScale;
+          networkContext.beginPath();
+          networkContext.moveTo(start.x, start.y);
+          networkContext.bezierCurveTo(controlOneX, controlOneY, controlTwoX, controlTwoY, end.x, end.y);
+          networkContext.strokeStyle = `rgba(${GOLD.join(",")},${(.045 + audio * .055) * alphaScale})`;
+          networkContext.lineWidth = .55 + (strand % 5 === 0 ? .75 : 0);
+          networkContext.stroke();
+        }
+
+        for (let pass = 0; pass < 2; pass += 1) {
+          for (let first = 0; first < points.length; first += 1) {
+            const a = points[first];
+            for (let link = 0; link < 4; link += 1) {
+              const jump = 3 + Math.floor(seededNoise(first * 13 + link * 37) * (points.length - 4));
+              const b = points[(first + jump) % points.length];
+              const distance = Math.hypot(a.x - b.x, a.y - b.y);
+              const distanceFade = Math.max(.18, 1 - distance / (Math.max(width, height) * 1.12));
+              const baseAlpha = pass === 0 ? .038 : .12;
+              const lineAlpha = (baseAlpha + audio * .065) * distanceFade * a.strength * alphaScale;
+              networkContext.beginPath();
+              networkContext.moveTo(a.x, a.y);
+              networkContext.lineTo(b.x, b.y);
+              networkContext.strokeStyle = `rgba(${GOLD.join(",")},${lineAlpha})`;
+              networkContext.lineWidth = pass === 0 ? 2.2 : .5 + a.strength * .28;
+              networkContext.stroke();
+            }
+          }
+        }
+
+        for (let index = 0; index < points.length; index += 1) {
+          const point = points[index];
+          const pulse = .72 + Math.sin(shaderTime * (1.05 + audio * 1.8) + index * .77) * .28;
+          if (index % 5 === 0) {
+            const glowRadius = (10 + point.strength * 12) * Math.max(.12, collapseScale);
+            const glow = networkContext.createRadialGradient(point.x, point.y, 0, point.x, point.y, glowRadius);
+            glow.addColorStop(0, `rgba(${PALE_GOLD.join(",")},${(.18 + audio * .16) * pulse * alphaScale})`);
+            glow.addColorStop(.2, `rgba(${GOLD.join(",")},${(.12 + audio * .1) * pulse * alphaScale})`);
+            glow.addColorStop(1, `rgba(${GOLD.join(",")},0)`);
+            networkContext.fillStyle = glow;
+            networkContext.fillRect(point.x - glowRadius, point.y - glowRadius, glowRadius * 2, glowRadius * 2);
+          }
+          networkContext.beginPath();
+          networkContext.arc(point.x, point.y, Math.max(.3, (.55 + point.strength * .52) * collapseScale), 0, Math.PI * 2);
+          networkContext.fillStyle = `rgba(${PALE_GOLD.join(",")},${(.42 + point.strength * .3) * alphaScale})`;
+          networkContext.fill();
+        }
+
+        networkContext.globalCompositeOperation = "source-over";
+      }
 
       if (gl && program && uniforms) {
         gl.clearColor(0, 0, 0, 0);
@@ -309,8 +424,9 @@ export default function VoiceGarden({ state, signal, phaseLabel }: VoiceGardenPr
 
   return (
     <div className="voice-garden" aria-hidden="true">
-      <canvas ref={shaderRef} />
-      <canvas ref={effectsRef} />
+      <canvas ref={networkRef} className="voice-garden-network" />
+      <canvas ref={shaderRef} className="voice-garden-organic" />
+      <canvas ref={effectsRef} className="voice-garden-effects" />
       <div className="voice-garden-status" data-state={state}>
         <span className="voice-garden-status-core">
           <i />

@@ -203,6 +203,15 @@
   filter: contrast(1.22) saturate(1.08) drop-shadow(0 0 16px rgba(211, 181, 106, .24));
 }
 
+.honyaku .voice-garden-network {
+  z-index: 0;
+  opacity: .9;
+  filter: contrast(1.18) saturate(1.12) drop-shadow(0 0 13px rgba(218, 181, 91, .34));
+}
+
+.honyaku .voice-garden-organic { z-index: 1; }
+.honyaku .voice-garden-effects { z-index: 2; }
+
 .honyaku .voice-garden-status {
   position: absolute;
   z-index: 3;
