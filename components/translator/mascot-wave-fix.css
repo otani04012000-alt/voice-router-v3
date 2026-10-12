@@ -1,10 +1,9 @@
+/* Preserve mascot transparency. Use the published artwork, not synthetic vector strokes. */
 .honyaku .voice-router-core--landscape .voice-garden::after,.honyaku .voice-router-core--landscape .voice-garden::before,.honyaku .ink-flag-scene{background-color:transparent!important;border:0!important;box-shadow:none!important}
-.honyaku .input-card{position:relative;isolation:isolate;overflow:hidden;background:#102636!important}
-.honyaku .input-card::before{content:"";position:absolute;inset:-4%!important;width:auto!important;height:auto!important;z-index:0;pointer-events:none;border-radius:inherit;background-image:linear-gradient(180deg,rgba(5,14,23,.26),rgba(5,14,23,.08) 45%,rgba(5,14,23,.42)),url("/hokusai-wave.svg")!important;background-repeat:no-repeat!important;background-size:cover!important;background-position:center!important;opacity:1!important;filter:none!important;mix-blend-mode:normal!important;transform-origin:center;animation:hokusai-swell 16s ease-in-out infinite alternate!important}
+.honyaku .input-card{position:relative;isolation:isolate;overflow:hidden;background:#132b3b!important}
+.honyaku .input-card::before{content:"";position:absolute;inset:0!important;width:auto!important;height:auto!important;z-index:0;pointer-events:none;border-radius:inherit;background-image:linear-gradient(180deg,rgba(5,14,23,.12),rgba(5,14,23,.25)),url("https://commons.wikimedia.org/wiki/Special:FilePath/Great_Wave_off_Kanagawa2.jpg?width=1600")!important;background-repeat:no-repeat!important;background-size:cover!important;background-position:50% 45%!important;opacity:1!important;filter:none!important;mix-blend-mode:normal!important;animation:none!important;transform:none!important}
 .honyaku .input-card>*:not(.energy-rail){position:relative;z-index:1}
-.honyaku .input-card textarea{color:#f4f0e5!important;background:rgba(5,16,27,.68)!important;border-color:rgba(207,223,220,.36)!important;backdrop-filter:blur(3px)}
-.honyaku .input-card textarea::placeholder{color:#c4d2d4!important}
-@keyframes hokusai-swell{from{transform:translate(-.5%,.5%) scale(1)}to{transform:translate(.5%,-.5%) scale(1.025)}}
-@media(max-width:640px){.honyaku .input-card::before{inset:-3%!important;width:auto!important;height:auto!important;background-size:100% 100%!important;background-position:center!important;background-image:linear-gradient(180deg,rgba(5,14,23,.38),rgba(5,14,23,.14) 38%,rgba(5,14,23,.52)),url("/hokusai-wave.svg")!important;animation:hokusai-swell-mobile 20s ease-in-out infinite alternate!important}.honyaku .input-card textarea{background:rgba(5,16,27,.76)!important;backdrop-filter:blur(2px)}}
-@keyframes hokusai-swell-mobile{from{transform:translateY(.25%) scale(1)}to{transform:translateY(-.25%) scale(1.012)}}
-@media(prefers-reduced-motion:reduce){.honyaku .input-card::before{animation:none!important;transform:none}}
+.honyaku .input-card .card-heading{color:#f5f0e5;text-shadow:0 1px 5px rgba(0,0,0,.85)}
+.honyaku .input-card textarea{color:#f5f0e5!important;background:rgba(5,16,27,.8)!important;border-color:rgba(226,218,195,.38)!important;backdrop-filter:blur(2px)}
+.honyaku .input-card textarea::placeholder{color:#d2dbdd!important}
+@media(max-width:640px){.honyaku .input-card::before{background-position:32% 42%!important;background-size:cover!important}.honyaku .input-card textarea{background:rgba(5,16,27,.84)!important}}
