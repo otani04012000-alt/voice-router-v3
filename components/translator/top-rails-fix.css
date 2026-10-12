@@ -7,4 +7,3 @@
 .honyaku.honyaku .input-card:not([data-hokusai-live=ready])::before{animation:visible-hokusai-swell 7s ease-in-out infinite alternate!important}
 .honyaku.honyaku .input-card:not([data-hokusai-live=ready])::after{display:block!important;animation:wave-light-flow 7s ease-in-out infinite alternate!important}
 .honyaku.honyaku .input-card[data-hokusai-live=ready]::after{display:none!important}
-@media(prefers-reduced-motion:reduce){.honyaku.honyaku .energy-rail,.honyaku.honyaku .input-card>.hokusai-live-canvas,.honyaku.honyaku .input-card::before,.honyaku.honyaku .input-card::after{animation:none!important;transform:none!important}}
