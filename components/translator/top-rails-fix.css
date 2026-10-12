@@ -1,11 +1,12 @@
-/* Original VoiceGarden and its shaders are unchanged. WaveActions is no longer mounted. */
-/* Remove the unsolicited light-wave layer; retain the Hokusai artwork. */
-.honyaku.honyaku .input-card::after{display:none!important;animation:none!important}
-/* Existing straight top rails: thicker, longer moving highlights, no wave geometry. */
-.honyaku.honyaku .energy-rail{position:absolute;top:0;left:0;width:100%;height:8px!important;overflow:hidden;pointer-events:none;background:linear-gradient(90deg,#548ca866,#c9b174aa,#8bcad188,#548ca866)!important;box-shadow:0 0 12px rgba(158,222,239,.5)!important}
-.honyaku.honyaku .energy-rail::before,.honyaku.honyaku .energy-rail::after{content:"";position:absolute;inset:auto!important;top:0!important;bottom:0!important;left:0!important;height:100%!important;width:46%!important;opacity:1!important;background:linear-gradient(90deg,transparent,#a9edf1 25%,#fff3cd 50%,#dfc184 70%,transparent)!important;filter:drop-shadow(0 0 4px #afe7f2)!important;animation:straight-rail-travel 1.6s linear infinite!important}
-.honyaku.honyaku .energy-rail::after{width:28%!important;animation:straight-rail-return 2.2s linear infinite!important;animation-delay:-.8s!important;background:linear-gradient(90deg,transparent,#d7c4ef 30%,#e8ffff 52%,#96d6df 70%,transparent)!important}
+/* Straight top rails only. Original character shaders remain unchanged. */
+.honyaku.honyaku .energy-rail{position:absolute;z-index:8;top:0;left:0;width:100%;height:12px!important;overflow:hidden;pointer-events:none;background:linear-gradient(90deg,#25455d,#b69b65,#426b7d)!important;box-shadow:0 0 12px rgba(158,222,239,.5)!important}
+.honyaku.honyaku .energy-rail::before,.honyaku.honyaku .energy-rail::after{content:"";position:absolute;inset:auto!important;top:0!important;bottom:0!important;left:0!important;height:100%!important;width:55%!important;opacity:1!important;background:linear-gradient(90deg,transparent,#a9edf1 25%,#fff3cd 50%,#dfc184 70%,transparent)!important;animation:straight-rail-travel 1.8s linear infinite!important}
+.honyaku.honyaku .energy-rail::after{width:36%!important;animation:straight-rail-return 2.2s linear infinite!important;animation-delay:-.8s!important}
+/* JS-driven rails use their span instead of duplicate pseudo-elements. */
+.honyaku.honyaku .energy-rail.verified-top-rail::before,.honyaku.honyaku .energy-rail.verified-top-rail::after{display:none!important}
 @keyframes straight-rail-travel{from{transform:translateX(-110%)}to{transform:translateX(240%)}}
 @keyframes straight-rail-return{from{transform:translateX(380%)}to{transform:translateX(-110%)}}
-@media(max-width:640px){.honyaku.honyaku .energy-rail{height:7px!important}.honyaku.honyaku .energy-rail::before{width:56%!important}.honyaku.honyaku .energy-rail::after{width:36%!important}}
-@media(prefers-reduced-motion:reduce){.honyaku.honyaku .energy-rail::before,.honyaku.honyaku .energy-rail::after{animation:none!important;transform:translateX(50%)}}
+/* Retain moving artwork and light when WebGL cannot load. */
+.honyaku.honyaku .input-card:not([data-hokusai-live=ready])::after{display:block!important;animation:wave-light-flow 9s ease-in-out infinite alternate!important}
+.honyaku.honyaku .input-card[data-hokusai-live=ready]::after{display:none!important}
+@media(prefers-reduced-motion:reduce){.honyaku.honyaku .energy-rail::before,.honyaku.honyaku .energy-rail::after{animation:none!important;transform:translateX(50%)}.honyaku.honyaku .input-card::after{animation:none!important;transform:none!important}}
