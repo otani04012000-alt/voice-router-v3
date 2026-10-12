@@ -10,3 +10,5 @@
 .honyaku.honyaku .input-card:not([data-hokusai-live=ready])::after{display:block!important;animation:wave-light-flow 9s ease-in-out infinite alternate!important}
 .honyaku.honyaku .input-card[data-hokusai-live=ready]::after{display:none!important}
 @media(prefers-reduced-motion:reduce){.honyaku.honyaku .energy-rail::before,.honyaku.honyaku .energy-rail::after{animation:none!important;transform:translateX(50%)}.honyaku.honyaku .input-card::after{animation:none!important;transform:none!important}}
+/* Show the result card before translation so its third rail is visible on mobile. */
+@media(max-width:959px){.honyaku.honyaku .output-card:not(.has-result){display:flex!important;min-height:180px}}
