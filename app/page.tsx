@@ -1,2 +1,3 @@
 import TranslationStudio from "@/components/translator/studio"
-export default function Page() { return <TranslationStudio /> }
+import FlagCatchBridge from "@/components/translator/flag-catch-bridge"
+export default function Page() { return <><TranslationStudio /><FlagCatchBridge /></> }
