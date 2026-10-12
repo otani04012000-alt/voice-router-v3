@@ -1,0 +1,5 @@
+/* Preview-only integration: retain network, character actions and microphone logic. */
+.honyaku .voice-router-core--landscape .voice-garden::after,.honyaku .voice-router-core--landscape .voice-garden::before,.honyaku .ink-flag-scene{background-color:transparent!important;border:0!important;box-shadow:none!important}
+.honyaku .input-card::before{inset:0!important;width:100%!important;height:100%!important;background-image:url("/translation-wave-seamless.svg")!important;background-repeat:repeat!important;background-size:96px 48px!important;background-position:0 0!important;opacity:.48!important;filter:none!important;mix-blend-mode:screen;animation:full-card-wave-drift 18s linear infinite!important}
+@keyframes full-card-wave-drift{from{background-position:0 0}to{background-position:96px 48px}}
+@media(prefers-reduced-motion:reduce){.honyaku .input-card::before{animation:none!important}}
