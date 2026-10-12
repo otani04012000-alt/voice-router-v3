@@ -10,7 +10,7 @@ text{font-family:monospace;fill:#dbdfd4;font-size:15px}.kick{transform-box:fill-
 <g id="chair"><rect x="-46" y="-32" width="8" height="68" fill="#6f6760"/><rect x="-44" y="-32" width="17" height="8" fill="#928374"/><rect x="-42" y="32" width="85" height="9" fill="#928374"/><path fill="#665e59" d="M-35 41h7v39h-7zm61 0h7v39h-7z"/></g>
 <g id="leg"><path fill="#17151e" d="M0 0h7v27h13v6H-2v-7h2z"/><rect x="1" y="2" width="2" height="20" fill="#65798a"/></g>
 </defs>
-<rect width="720" height="280" fill="#293441"/><path stroke="#53616d" stroke-width="1" d="M240 18v244M480 18v244"/>
+<path stroke="#53616d" stroke-width="1" d="M240 18v244M480 18v244"/>
 <text x="120" y="30" text-anchor="middle">待機中</text><text x="360" y="30" text-anchor="middle">翻訳中</text><text x="600" y="30" text-anchor="middle">翻訳完了</text>
 <path stroke="#52606a" stroke-width="2" d="M18 234h204m36 0h204m36 0h204"/>
 <g transform="translate(120 144)"><use href="#chair"/><use href="#blob"/><path fill="#17151e" d="M-28 12h13v22h-8v15h-7z"/><g transform="translate(-7 34)"><g class="kick"><use href="#leg"/></g></g><g transform="translate(21 34)"><g class="kick opposite"><use href="#leg"/></g></g></g>
