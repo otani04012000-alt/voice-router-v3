@@ -9,3 +9,6 @@
 /* Preserve existing Hokusai shader presentation. */
 .honyaku.honyaku .input-card>.hokusai-live-canvas{animation:none!important;transform:none!important}
 .honyaku.honyaku .input-card[data-hokusai-live=ready]::after{display:none!important}
+/* Keep interactive translation controls above the 80px decorative rail. */
+.honyaku.honyaku .language-bar>label,.honyaku.honyaku .language-bar>.swap-button,.honyaku.honyaku .language-bar>.language-bar-note{position:relative;z-index:9}
+.honyaku.honyaku .language-bar>label{background:#030a10}
