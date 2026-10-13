@@ -1,0 +1,29 @@
+.honyaku{--gold:#c7ad73;--gold-hi:#f1dfb6;--frame-soft:rgba(184,218,235,.25);--ink:#f4f9fb;--sub:#d0e0e9;--muted:#a5bfcd;background:radial-gradient(ellipse at 50% 0%,rgba(113,190,224,.3),transparent 60%),linear-gradient(180deg,#203b50,#162c3d 60%,#142838)!important;color:#f4f9fb}
+.honyaku::before,.honyaku::after{display:none!important}
+.honyaku section,.honyaku form{border-color:rgba(183,221,239,.25);border-radius:20px;background:rgba(29,53,70,.65);box-shadow:0 16px 48px -30px rgba(0,0,0,.35)}
+.honyaku .language-bar{position:relative;isolation:isolate;min-height:340px;align-items:flex-start;padding:22px 20px 42px;border:1px solid rgba(189,228,244,.4);border-radius:24px;background:radial-gradient(ellipse at 50% 48%,rgba(156,224,247,.3),transparent 65%),linear-gradient(160deg,#315b74,#1b374c 75%);box-shadow:inset 0 1px 0 rgba(225,243,251,.3),0 16px 60px -35px rgba(123,188,213,.6)}
+.honyaku .language-bar>.voice-router-core--landscape{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;mix-blend-mode:normal;filter:brightness(2.25) saturate(1.08)}
+.honyaku .language-bar>label,.honyaku .language-bar>.swap-button,.honyaku .language-bar>.language-bar-note{position:relative;z-index:2;align-self:flex-start}
+.honyaku .language-bar>label{background:transparent;padding:4px 0}
+.honyaku .language-bar select{font-size:22px;color:#f2fbff}
+.honyaku .language-bar .voice-router-assist{display:none}
+.honyaku .language-bar .voice-router-readout{bottom:16px;justify-content:center;padding:0 8px}
+.honyaku .language-bar .voice-router-readout>span{display:none}
+.honyaku .language-bar .voice-router-readout strong{font-size:12px;padding:8px 13px;border-radius:999px;border:1px solid rgba(214,234,245,.4);background:rgba(28,53,70,.85);color:#edfaff}
+.honyaku .language-bar::after{content:"";position:absolute;inset:65px 8px 40px;z-index:1;pointer-events:none;border-radius:20px;background:radial-gradient(circle at 16% 34%,#effcff 0 1px,rgba(173,235,255,.4) 2px,transparent 6px),radial-gradient(circle at 76% 23%,#effcff 0 1px,rgba(173,235,255,.4) 2px,transparent 7px),radial-gradient(circle at 88% 67%,#effcff 0 1px,transparent 5px),radial-gradient(circle at 38% 78%,#effcff 0 1px,transparent 6px),radial-gradient(circle at 61% 49%,rgba(233,252,255,.7) 0 1px,transparent 5px);animation:zero-sparkle 5s ease-in-out infinite alternate}
+@keyframes zero-sparkle{from{opacity:.35;transform:translateY(2px)}to{opacity:.9;transform:translateY(-4px)}}
+.honyaku .input-card{position:relative;isolation:isolate;background:linear-gradient(150deg,rgba(131,197,220,.24),rgba(65,128,159,.13));border:1px solid rgba(189,228,244,.32);box-shadow:inset 0 1px 0 rgba(225,243,251,.16)}
+.honyaku .input-card::before{content:"";position:absolute;inset:0;width:auto;border-radius:inherit;z-index:-1;pointer-events:none;background:radial-gradient(ellipse 70% 32% at 0% 70%,transparent 70%,rgba(189,228,244,.25) 71%,transparent 73%),radial-gradient(ellipse 85% 40% at 100% 92%,transparent 70%,rgba(225,243,251,.2) 71%,transparent 73%),radial-gradient(ellipse 75% 35% at 45% 100%,transparent 65%,rgba(123,188,213,.2) 66%,transparent 69%);background-size:135% 115%;animation:zero-wave 14s ease-in-out infinite alternate}
+@keyframes zero-wave{from{background-position:0% 0%}to{background-position:100% 35%}}
+.honyaku .input-card form{background:transparent;box-shadow:none}
+.honyaku textarea{min-height:132px;padding:18px;border:1px solid rgba(189,228,244,.3);border-radius:16px;background:rgba(89,146,173,.12);color:#f4fbff;font-family:var(--sans,sans-serif);font-size:19px;line-height:1.65}
+.honyaku textarea::placeholder{color:#b9d1de}
+.honyaku textarea:focus{border-color:#bde4f4;outline:2px solid rgba(189,228,244,.22);outline-offset:2px}
+.honyaku .input-actions{gap:12px}
+.honyaku .mic-button{border:1px solid rgba(232,210,163,.65);border-radius:14px;background:linear-gradient(135deg,#e9d3a0,#c4a461);color:#14130f;box-shadow:0 8px 24px -12px rgba(213,179,108,.45)}
+.honyaku .mic-button.listening{background:linear-gradient(135deg,#e1f3fb,#93d1e6);color:#071620;border-color:#bde4f4}
+.honyaku .outline-button{border-color:rgba(189,228,244,.32);border-radius:12px;background:transparent;color:#dcecf5;box-shadow:none}
+.honyaku button:disabled{opacity:.48;box-shadow:none}
+.honyaku button:focus-visible,.honyaku select:focus-visible{outline:2px solid #bde4f4;outline-offset:3px}
+@media(max-width:600px){.honyaku .language-bar{min-height:310px;padding:18px 15px 42px}.honyaku .language-bar select{font-size:20px}.honyaku section,.honyaku form{border-radius:16px}.honyaku textarea{font-size:18px}.honyaku .language-bar .voice-router-readout strong{font-size:10px}}
+@media(prefers-reduced-motion:reduce){.honyaku .language-bar::after,.honyaku .input-card::before{animation:none}}

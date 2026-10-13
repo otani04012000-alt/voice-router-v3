@@ -1,0 +1,57 @@
+name: Voice motion preview
+on:
+  push:
+    branches: [preview/translation-design]
+    paths: [.github/workflows/voice-motion-preview.yml]
+permissions:
+  contents: write
+jobs:
+  motion:
+    if: github.repository == 'otani04012000-alt/voice-router-v3' && github.ref == 'refs/heads/preview/translation-design'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: preview/translation-design
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Connect collapse and release to renderer
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          p=Path('components/translator/voice-router-core.tsx')
+          b=p.read_bytes()
+          if hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()!='14687bc60a4caec65494e9968be2bb57987f0dbe':
+              raise SystemExit('Renderer changed; refusing to overwrite')
+          s=b.decode()
+          def replace(old,new):
+              global s
+              if s.count(old)!=1: raise SystemExit('Renderer anchor mismatch')
+              s=s.replace(old,new,1)
+          replace('const TAU = Math.PI * 2;', 'export function voiceMotion(state: string, elapsed: number, level = 0) {\n  const t = Math.max(0, elapsed);\n  const energy = Math.max(0, Math.min(1, level));\n  if (state === "ending") {\n    const p = Math.min(1, t / 1350);\n    return { scale: (1 - p) ** 2, opacity: 1 - p, swirl: p * Math.PI * 3 };\n  }\n  if (state === "stopped") return { scale: 0, opacity: 0, swirl: 0 };\n  if (state === "translating") return { scale: 0.12 + Math.sin(t / 220) * 0.015, opacity: 0.75, swirl: t / 650 };\n  if (state === "speaking") {\n    const p = Math.min(1, t / 650);\n    const ease = 1 - (1 - p) ** 3;\n    return { scale: 0.12 + ease * 1.08, opacity: 0.35 + ease * 0.65, swirl: -ease * Math.PI };\n  }\n  return { scale: state === "idle" ? 0.76 : state === "delivered" ? 0.88 : 1 + energy * 0.18, opacity: 1, swirl: 0 };\n}\n'+'\nconst TAU = Math.PI * 2;')
+          replace('      const endingProgress = state === "ending" ? Math.min(1, elapsed / 1350) : 0;', '      const motion = voiceMotion(state, elapsed, signal.current.level);\n      if (canvas.current) canvas.current.style.opacity = String(motion.opacity);')
+          replace('      const formScale = state === "idle"\n        ? 0.76\n        : state === "stopped"\n          ? 0.54\n          : state === "ending"\n            ? 1 - endingProgress * 0.46\n            : state === "delivered"\n              ? 0.88\n              : 1;', '      const formScale = motion.scale;')
+          replace('      const rotZ = Math.sin(t * 0.19) * 0.08;', '      const rotZ = Math.sin(t * 0.19) * 0.08 + motion.swirl;')
+          test=Path('tests/voice-motion.test.ts')
+          if test.exists(): raise SystemExit('Motion test already exists')
+          p.write_text(s)
+          test.write_text('import assert from "node:assert/strict";\nimport { voiceMotion } from "../components/translator/voice-router-core";\nlet checks=0;function check(f: () => void){f();checks++;}\ncheck(()=>assert.equal(voiceMotion("ending",0).scale,1));\ncheck(()=>assert.equal(voiceMotion("ending",1350).scale,0));\ncheck(()=>assert.equal(voiceMotion("ending",1350).opacity,0));\ncheck(()=>assert.equal(voiceMotion("ending",3000).scale,0));\ncheck(()=>assert.equal(voiceMotion("stopped",0).opacity,0));\ncheck(()=>assert.ok(voiceMotion("listening",0,1).scale>voiceMotion("listening",0,0).scale));\ncheck(()=>{let previous=1;for(let t=0;t<=1350;t+=50){const m=voiceMotion("ending",t);assert.ok(m.scale<=previous);previous=m.scale;}});\ncheck(()=>assert.equal(voiceMotion("speaking",650).opacity,1));\ncheck(()=>assert.ok(voiceMotion("speaking",650).scale>voiceMotion("speaking",0).scale));\ncheck(()=>assert.ok(voiceMotion("translating",1000).scale<0.15));\ncheck(()=>assert.equal(voiceMotion("ending",-100).scale,1));\ncheck(()=>assert.ok(voiceMotion("listening",0,100).scale<=1.18));\nconsole.log(JSON.stringify({checks,status:"passed"}));\n')
+          PY
+      - run: npm ci
+      - run: npm ci --prefix server
+      - run: npm run typecheck
+      - run: node --import ./server/node_modules/tsx/dist/loader.mjs tests/voice-motion.test.ts
+      - run: npm test
+      - run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+      - name: Save validated renderer on preview branch only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add components/translator/voice-router-core.tsx tests/voice-motion.test.ts
+          git commit -m 'feat: collapse voice field into core and release after translation'
+          git push origin HEAD:refs/heads/preview/translation-design

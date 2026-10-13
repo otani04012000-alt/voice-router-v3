@@ -1,0 +1,56 @@
+name: Single enlarged voice hero preview
+on:
+  push:
+    branches: [preview/translation-design]
+    paths: [.github/workflows/voice-garden-single-hero-preview.yml]
+permissions:
+  contents: write
+jobs:
+  hero:
+    if: github.repository == 'otani04012000-alt/voice-router-v3' && github.ref == 'refs/heads/preview/translation-design'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: preview/translation-design
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Keep one enlarged upper voice garden
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,re
+          def load(path,sha):
+              p=Path(path);b=p.read_bytes()
+              assert hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()==sha,'Source changed: '+path
+              return p,b.decode()
+          p,s=load('components/translator/studio.tsx','b3a1ef170960ac205bf2bb46067e7be2a0d57cf3')
+          s,n=re.subn(r'\{!conversationMode\s*&&\s*\(\s*<section className="voice-landscape"[\s\S]*?</section>\s*\)\}', '',s)
+          assert n==1,'Duplicate section anchor mismatch'
+          assert s.count('<VoiceRouterCore')==1,'Expected exactly one voice illustration'
+          p.write_text(s)
+          p,s=load('components/translator/voice-garden.tsx','913d211a4a117c1b667f8c0112ee758c22243ec1')
+          for old,new in [('size=.4;','size=.64;'),('size=.4+.72*spread','size=.64+.48*spread'),('size=.4+.72*p','size=.64+.48*p')]:
+              assert s.count(old)==1,'Scale anchor mismatch'
+              s=s.replace(old,new,1)
+          p.write_text(s)
+          p,s=load('components/translator/voice-hero.css','429fb92baa629c7f27c6f67ff074c3c2f9ad5a0a')
+          s+='\n.honyaku .language-bar { min-height: 320px; align-items: flex-start; padding-top: 18px; }\n.honyaku .language-bar > label, .honyaku .language-bar > .swap-button { align-self: flex-start; }\n@media (max-width: 600px) { .honyaku .language-bar { min-height: 300px; } }\n'
+          p.write_text(s)
+          PY
+      - run: npm ci
+      - run: npm ci --prefix server
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+      - name: Commit verified single hero on preview only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add components/translator/studio.tsx components/translator/voice-garden.tsx components/translator/voice-hero.css
+          git commit -m 'fix: show one enlarged upper voice garden'
+          git push origin HEAD:refs/heads/preview/translation-design
