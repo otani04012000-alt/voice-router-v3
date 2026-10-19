@@ -14,3 +14,9 @@
 @keyframes attached-wave-flow-mobile{from{background-position:0 0,0 0}to{background-position:0 0,300px -300px}}
 @keyframes original-wave-swell-mobile{from{transform:translate(-.4%,.4%) scale(1)}to{transform:translate(.4%,-.4%) scale(1.02)}}
 @media(prefers-reduced-motion:reduce){.honyaku,.honyaku .input-card::before,.honyaku .input-card::after{animation:none!important;transform:none!important}}
+/* Reveal the existing animated dot companion, not the later static scene. */
+.honyaku.honyaku .voice-router-core--landscape .voice-garden::before,.honyaku.honyaku .voice-router-core--landscape .voice-garden::after{display:none!important}
+.honyaku.honyaku .voice-router-core--landscape .voice-garden>canvas{transform-origin:50% 50%;transition:transform .55s ease-out,opacity .55s ease-out}
+.honyaku.honyaku[data-mic-phase=ending] .voice-router-core--landscape .voice-garden>canvas{transform:rotate(180deg) scale(.55);opacity:.65}
+.honyaku.honyaku:is([data-mic-phase=stopping],[data-mic-phase=stopped]) .voice-router-core--landscape .voice-garden>canvas{transform:rotate(720deg) scale(.015);opacity:0}
+@media(prefers-reduced-motion:reduce){.honyaku.honyaku .voice-router-core--landscape .voice-garden>canvas{transition:none;transform:none!important}}
