@@ -4,6 +4,7 @@ import { microphoneTransition, type MicrophonePhase } from "./microphone-state";
 import { LANGUAGES, type Language } from "@/lib/translation";
 import { selectSpeechVoice } from "./speech-voice";
 import { planSpeech, playSpeechSequence } from "./speech-playback";
+import { followMeter, METER_INTERVAL_MS } from "./voice-meter";
 
 type Recognition = {
   lang: string;
@@ -64,19 +65,21 @@ export function useVoice(
     peak: 0,
     updatedAt: 0,
   });
-  const meterFrame = useRef<number | null>(null);
+  const meterTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const meterStream = useRef<MediaStream | null>(null);
   const meterContext = useRef<AudioContext | null>(null);
   const stoppedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const speechRun = useRef(0);
+  const inputRun = useRef(0);
   const cancelPlayback = useRef<(() => void) | null>(null);
   const utterance = useRef<SpeechSynthesisUtterance | null>(null);
   const textCallback = useRef(onText),
     noticeCallback = useRef(onNotice);
 
   const stopMeter = useCallback(() => {
-    if (meterFrame.current !== null) cancelAnimationFrame(meterFrame.current);
-    meterFrame.current = null;
+    inputRun.current += 1;
+    if (meterTimer.current !== null) clearTimeout(meterTimer.current);
+    meterTimer.current = null;
     meterStream.current?.getTracks().forEach((track) => track.stop());
     meterStream.current = null;
     const context = meterContext.current;
@@ -95,6 +98,7 @@ export function useVoice(
   const startMeter = useCallback(async () => {
     if (!navigator.mediaDevices?.getUserMedia || meterStream.current) return;
     try {
+      const session = inputRun.current;
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: false,
@@ -102,6 +106,10 @@ export function useVoice(
           autoGainControl: false,
         },
       });
+      if (inputRun.current !== session) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
       const AudioContextConstructor =
         window.AudioContext ||
         (window as typeof window & { webkitAudioContext?: typeof AudioContext })
@@ -112,9 +120,14 @@ export function useVoice(
       }
       const context = new AudioContextConstructor();
       if (context.state === "suspended") await context.resume();
+      if (inputRun.current !== session) {
+        stream.getTracks().forEach((track) => track.stop());
+        void context.close();
+        return;
+      }
       const analyser = context.createAnalyser();
       analyser.fftSize = 1024;
-      analyser.smoothingTimeConstant = 0.72;
+      analyser.smoothingTimeConstant = 0;
       context.createMediaStreamSource(stream).connect(analyser);
       const frequency = new Uint8Array(analyser.frequencyBinCount);
       const waveform = new Uint8Array(analyser.fftSize);
@@ -126,7 +139,13 @@ export function useVoice(
         for (let index = from; index < to; index++) sum += frequency[index];
         return sum / Math.max(1, to - from) / 255;
       };
+      let lastMeasurement = performance.now();
       const measure = () => {
+        meterTimer.current = null;
+        if (inputRun.current !== session || meterStream.current !== stream || context.state === "closed") return;
+        const now = performance.now();
+        const elapsed = now - lastMeasurement;
+        lastMeasurement = now;
         analyser.getByteFrequencyData(frequency);
         analyser.getByteTimeDomainData(waveform);
         let squares = 0;
@@ -142,16 +161,16 @@ export function useVoice(
           high: average(Math.floor(bins * 0.3), Math.floor(bins * 0.72)),
         };
         const current = signal.current;
-        const level = current.level * 0.68 + rms * 0.32;
+        const level = followMeter(current.level, rms, elapsed);
         signal.current = {
-          low: current.low * 0.7 + next.low * 0.3,
-          mid: current.mid * 0.7 + next.mid * 0.3,
-          high: current.high * 0.7 + next.high * 0.3,
+          low: followMeter(current.low, next.low, elapsed),
+          mid: followMeter(current.mid, next.mid, elapsed),
+          high: followMeter(current.high, next.high, elapsed),
           level,
-          peak: Math.max(current.peak * 0.86, Math.max(0, level - current.level) * 7),
+          peak: Math.max(followMeter(current.peak, 0, elapsed), Math.max(0, level - current.level) * 7),
           updatedAt: Date.now(),
         };
-        meterFrame.current = requestAnimationFrame(measure);
+        meterTimer.current = setTimeout(measure, METER_INTERVAL_MS);
       };
       measure();
     } catch {
@@ -184,11 +203,16 @@ export function useVoice(
     };
   }, [stopMeter]);
   const stop = useCallback(() => {
+    inputRun.current += 1;
     if (recognition.current) {
       setMicPhase((phase) => microphoneTransition(phase, "stop"));
       recognition.current.stop();
+    } else {
+      stopMeter();
+      setListening(false);
+      setMicPhase("off");
     }
-  }, []);
+  }, [stopMeter]);
   const start = useCallback(async (language: Language) => {
     if (stoppedTimer.current) {
       clearTimeout(stoppedTimer.current);
@@ -213,7 +237,9 @@ export function useVoice(
     setSpeaking(false);
     setInterim("");
     setMicPhase("starting");
+    const session = ++inputRun.current;
     await startMeter();
+    if (inputRun.current !== session) return;
     const r = new Constructor();
     r.lang = LANGUAGES[language].locale;
     r.continuous = false;
@@ -291,6 +317,7 @@ export function useVoice(
         noticeCallback.current("この端末では読み上げを使えません。");
         return;
       }
+      inputRun.current += 1;
       recognition.current?.abort();
       const run = ++speechRun.current;
       cancelPlayback.current?.();
@@ -367,7 +394,30 @@ export function useVoice(
     window.speechSynthesis?.cancel();
     setSpeaking(false);
   }, []);
+  const refresh = useCallback(async (language: Language) => {
+    if (stoppedTimer.current) clearTimeout(stoppedTimer.current);
+    stoppedTimer.current = null;
+    const old = recognition.current;
+    recognition.current = null;
+    if (old) {
+      old.onresult = old.onerror = old.onend = null;
+      old.onstart = old.onaudiostart = old.onaudioend = old.onspeechstart = old.onspeechend = null;
+      old.abort();
+    }
+    stopMeter();
+    speechRun.current += 1;
+    cancelPlayback.current?.();
+    cancelPlayback.current = null;
+    utterance.current = null;
+    window.speechSynthesis?.cancel();
+    setSpeaking(false);
+    setListening(false);
+    setMicPhase("off");
+    setInterim("");
+    await start(language);
+  }, [start, stopMeter]);
   return {
+    refresh,
     supported,
     micPhase,
     listening,

@@ -1,0 +1,9 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {initialConvergence,advanceConvergence,CLOSE_MS} from '../components/translator/mic-convergence';
+test('stopping from 75 percent still takes full closing duration',()=>{let s={...initialConvergence(0),phase:'speech',progress:.75};s=advanceConvergence(s,100,'stopped',false,true);assert.equal(s.progress,.75);s=advanceConvergence(s,100+CLOSE_MS/2,'stopped',false,true);assert.ok(Math.abs(s.progress-.875)<1e-9);s=advanceConvergence(s,100+CLOSE_MS,'off',false,false);assert.equal(s.progress,1);});
+test('duplicate end events do not restart the closing clock',()=>{let s={...initialConvergence(0),phase:'speech',progress:.2};s=advanceConvergence(s,50,'stopping',false,true);s=advanceConvergence(s,200,'stopped',false,false);assert.equal(s.closingAt,50);});
+test('new session cancels old closure',()=>{let s=advanceConvergence(initialConvergence(0),100,'stopped',false,false);s=advanceConvergence(s,200,'starting',false,false);assert.equal(s.closingAt,null);});
+test('voice resumes without a discontinuous expansion',()=>{const s={...initialConvergence(0),phase:'ending',progress:.6,quietAt:0};const n=advanceConvergence(s,16,'speech',true,true);assert.equal(n.quietAt,null);assert.ok(n.progress<.6&&n.progress>.57);});
+test('missing level does not manufacture a silence countdown',()=>{const s={...initialConvergence(0),phase:'speech',progress:0};const n=advanceConvergence(s,100,'speech',false,false);assert.equal(n.progress,0);assert.equal(n.quietAt,null);});
+test('unexpected end is gradual and reaches completion',()=>{let s={...initialConvergence(0),phase:'speech',progress:0};s=advanceConvergence(s,50,'stopped',false,false);assert.equal(s.progress,0);s=advanceConvergence(s,66,'stopped',false,false);assert.ok(s.progress>0&&s.progress<.01);s=advanceConvergence(s,1250,'off',false,false);assert.equal(s.progress,1);});

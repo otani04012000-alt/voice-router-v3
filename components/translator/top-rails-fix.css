@@ -1,0 +1,14 @@
+/* Existing decorations only; thickness x4. Layout and visibility conditions unchanged. */
+.honyaku.honyaku .energy-rail{position:absolute;z-index:8;top:0;left:0;width:100%;height:80px!important;overflow:hidden;pointer-events:none;opacity:1!important;background:linear-gradient(135deg,#234b83,#69d4df,#b1d9c6,#9d78d0,#d5b477)!important;animation:none!important;box-shadow:0 0 12px #65cbd766!important}
+.honyaku.honyaku .energy-rail::before{content:"";display:block!important;position:absolute;inset:0 auto 0 0!important;width:100%!important;background:repeating-linear-gradient(90deg,#234b83 0%,#69d4df 20%,#b1d9c6 40%,#9d78d0 60%,#d5b477 80%,#234b83 100%)!important;filter:none!important;opacity:1!important;animation:existing-horizontal-flow 2.4s linear infinite!important}
+.honyaku.honyaku .energy-rail::after{content:"";display:block!important;position:absolute;inset:0 auto 0 0!important;width:100%!important;background:repeating-linear-gradient(90deg,#234b83 0%,#69d4df 20%,#b1d9c6 40%,#9d78d0 60%,#d5b477 80%,#234b83 100%)!important;filter:none!important;opacity:1!important;animation:existing-horizontal-flow-copy 2.4s linear infinite!important}
+@keyframes existing-horizontal-flow{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+@keyframes existing-horizontal-flow-copy{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.honyaku.honyaku .language-bar::before,.honyaku.honyaku .output-card::before{width:48px!important;background:repeating-linear-gradient(180deg,#234b83 0%,#69d4df 20%,#b1d9c6 40%,#9d78d0 60%,#d5b477 80%,#234b83 100%)!important;background-size:100% 200%!important;animation:existing-vertical-flow 3s linear infinite!important;pointer-events:none}
+@keyframes existing-vertical-flow{from{background-position:50% 0%}to{background-position:50% 100%}}
+/* Preserve existing Hokusai shader presentation. */
+.honyaku.honyaku .input-card>.hokusai-live-canvas{animation:none!important;transform:none!important}
+.honyaku.honyaku .input-card[data-hokusai-live=ready]::after{display:none!important}
+/* Keep interactive translation controls above the 80px decorative rail. */
+.honyaku.honyaku .language-bar>label,.honyaku.honyaku .language-bar>.swap-button,.honyaku.honyaku .language-bar>.language-bar-note{position:relative;z-index:9}
+.honyaku.honyaku .language-bar>label{background:#030a10}
