@@ -1,3 +1,4 @@
+@import "./render-budget.css";
 .honyaku{--gold:#c7ad73;--gold-hi:#f1dfb6;--frame-soft:rgba(184,218,235,.25);--ink:#f4f9fb;--sub:#d0e0e9;--muted:#a5bfcd;background:radial-gradient(ellipse at 50% 0%,rgba(113,190,224,.3),transparent 60%),linear-gradient(180deg,#203b50,#162c3d 60%,#142838)!important;color:#f4f9fb}
 .honyaku::before,.honyaku::after{display:none!important}
 .honyaku section,.honyaku form{border-color:rgba(183,221,239,.25);border-radius:20px;background:rgba(29,53,70,.65);box-shadow:0 16px 48px -30px rgba(0,0,0,.35)}
