@@ -15,6 +15,7 @@ export type Convergence = {
 export const EXPECT_MS = 900;   // 話し終えてからブラウザが切るまでの目安
 export const HOLD = .8;         // 受付が続いている間はここまでしか集まらない
 export const CLOSE_MS = 420;    // 停止通知から閉じ切るまで
+export const RIPPLE_MS = 750;   // 受付終了の合図（波紋）を出す時間
 const OPEN_TAU = 90, CLOSE_TAU = 140, HEARD_MIN = .035, HEARD_RATIO = .2;
 
 export function initialConvergence(now: number): Convergence {
@@ -46,4 +47,10 @@ export function advanceConvergence(s: Convergence, now: number, phase: string, l
   }
   n.progress += (target - n.progress) * -Math.expm1(-dt / (target > n.progress ? CLOSE_TAU : OPEN_TAU));
   return n;
+}
+
+// 受付が切れるまでのカウントダウン（0〜1）。話し終えて無音が続くと伸び、1でほぼ切れる目安。
+export function countdown(s: Convergence): number {
+  if (s.closingAt !== null || !s.spoke || !['listening', 'speech', 'ending'].includes(s.phase)) return 0;
+  return s.phase === 'ending' ? 1 : Math.min(1, s.quietMs / EXPECT_MS);
 }
