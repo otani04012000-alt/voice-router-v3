@@ -19,7 +19,7 @@ function draw(now:number){frame=0;if(disposed||document.hidden)return;if(!dirty&
 if(dirty){const bounds=garden!.getBoundingClientRect();w=bounds.width;h=bounds.height;dirty=false;if(w>0&&h>0){const d=Math.min(Math.max(.1,devicePixelRatio||1),1,512/Math.max(w,h),Math.sqrt(98304/(w*h)));canvas!.width=Math.max(1,Math.floor(w*d));canvas!.height=Math.max(1,Math.floor(h*d));ctx!.setTransform(d,0,0,d,0,0);gradient=ctx!.createLinearGradient(0,h,w,0);gradient.addColorStop(0,'#4b8ee1');gradient.addColorStop(.35,'#66d5e0');gradient.addColorStop(.6,'#dab55b');gradient.addColorStop(1,'#a87ae0');}}
 if(w<1||h<1)return;
 const mic=root!.dataset.micPhase||'off',input=signal.current,fresh=input.updatedAt!==undefined&&Date.now()-input.updatedAt<650,raw=fresh&&Number.isFinite(input.level)?Math.max(0,Math.min(1,input.level)):0,accepting=['listening','speech','ending'].includes(mic);
-timeline=advanceConvergence(timeline,now,mic,accepting&&raw>.035,fresh);
+timeline=advanceConvergence(timeline,now,mic,fresh?raw:null);
 const p=timeline.progress,scale=reduced?1:1-.86*p,angle=reduced?0:p*Math.PI*2,cx=w/2,cy=h/2,cs=Math.cos(angle),sn=Math.sin(angle),opacity=1-.7*p;
 energy+=((accepting?raw:0)-energy)*(1-Math.exp(-elapsed*9));
 garden!.dataset.convergence=p.toFixed(3);garden!.dataset.mic=mic;garden!.dataset.frameTime=now.toFixed(0);garden!.dataset.audioFresh=String(fresh);garden!.dataset.motion=reduced?'reduced':'full';garden!.dataset.acceptanceEnded=String(['off','stopped','error'].includes(mic));
